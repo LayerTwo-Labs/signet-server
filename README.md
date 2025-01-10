@@ -10,7 +10,6 @@
 
 Create bitcoin.conf (at /.bitcoin/bitcoin.conf) , and make sure it contains:
 
-    ```
     rpcuser=user
     rpcpassword=password
     txindex=1
@@ -21,7 +20,6 @@ Create bitcoin.conf (at /.bitcoin/bitcoin.conf) , and make sure it contains:
     signetblocktime=60
       # 1 minute block times. Note that /everyone/ who connects to this signet
       # must have this exact configuration value.
-    ```
 
 Step 2 (below) will add the signetchallenge=... line. 
 
@@ -31,7 +29,6 @@ This key will sign a new block into existence, every 60 seconds.
 
 Note: This is using Fish shell, if you are using Bash or Zsh then ask an AI for help.
 
-    ```
     $ mkdir l2l-signet
     $ ./build/src/bitcoind -daemon -regtest -datadir=$PWD/l2l-signet
 
@@ -49,11 +46,11 @@ Note: This is using Fish shell, if you are using Bash or Zsh then ask an AI for 
 
     # We're finished with the regtest wallet!
     $ ./build/src/bitcoin-cli -regtest -datadir=$PWD/l2l-signet stop
-    ```
+
 
 ### 3. Create the signet wallet
 
-    ```fish
+
     $ ./build/src/bitcoind -daemon -signet -datadir=$PWD/l2l-signet
 
     $ ./build/src/bitcoin-cli -signet -datadir=$PWD/l2l-signet \
@@ -62,13 +59,12 @@ Note: This is using Fish shell, if you are using Bash or Zsh then ask an AI for 
     $ ./build/src/bitcoin-cli signet -datadir=$PWD/l2l-signet \
         importdescriptors "$descriptors"
 
-    ```
 
 ### 4. Start mining
 
 This will run the 'generate' command, creating a new block on your network every 60 seconds. 
 
-    ```fish
+
     $ set address (./build/src/bitcoin-cli -signet -datadir=$PWD/l2l-signet getnewaddress)
 
     $ ./contrib/signet/miner \
@@ -76,7 +72,7 @@ This will run the 'generate' command, creating a new block on your network every
         generate --address $address \
         --grind-cmd "$PWD/build/src/bitcoin-util grind" \
         --min-nbits --ongoing --block-interval 60
-    ```
+
 
 You now have your own play money server.
 
@@ -86,7 +82,6 @@ Those joining the network (ie, non-mining nodes) must have the same bitcoin.conf
 
 The addnode line is your server's IP address + port 8332 . For us at L2L, this is 172.105.148.135:8332 :
 
-    ```
     rpcuser=user
     rpcpassword=password
     server=1
@@ -96,7 +91,6 @@ The addnode line is your server's IP address + port 8332 . For us at L2L, this i
     signetchallenge=00141f61d57873d70d28bd28b3c9f9d6bf818b5a0d6a
     zmqpubsequence=tcp://0.0.0.0:29000
     addnode=172.105.148.135:8332
-    ```
 
 But yours will have different values for "addnode", "signetchallenge".
 
