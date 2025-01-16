@@ -56,7 +56,7 @@ Note: This is using Fish shell, if you are using Bash or Zsh then ask an AI for 
     $ ./build/src/bitcoin-cli -signet -datadir=$PWD/l2l-signet \
          createwallet l2l-signet
 
-    $ ./build/src/bitcoin-cli signet -datadir=$PWD/l2l-signet \
+    $ ./build/src/bitcoin-cli -signet -datadir=$PWD/l2l-signet \
         importdescriptors "$descriptors"
 
 
