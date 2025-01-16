@@ -1,0 +1,58 @@
+name: signet-server
+
+services:
+  mainchain:
+    healthcheck:
+     test: ["CMD", "drivechain-cli", "-rpcuser=user", "-rpcpassword=password", "-signet", "getblockchaininfo"]
+
+    image: ghcr.io/layertwo-labs/bitcoin-patched:sha-c169c54
+    # map the named volume to the data directory
+    volumes: [mainchain-data:/home/drivechain/.drivechain]
+    restart: unless-stopped
+    command:
+      - drivechaind
+      - -rpcuser=user
+      - -rpcpassword=password
+      - -connect=172.105.148.135:38333
+      - -server
+      - -signet
+      - -signetblocktime=60
+      - -signetchallenge=00141551188e5153533b4fdd555449e640d9cc129456
+      - -acceptnonstdtxn
+      - -listen
+      - -rpcbind=0.0.0.0
+      - -rpcallowip=0.0.0.0/0
+      - -txindex
+      - -fallbackfee=0.00021
+      - -zmqpubsequence=tcp://0.0.0.0:29000
+
+  # TODO: we're connecting to the default drivechain.live `electrs` instance. 
+  # Run one as part of this infra stack?
+  enforcer: 
+    image: ghcr.io/layertwo-labs/bip300301_enforcer:sha-abcc076
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-service=cusf.mainchain.v1.ValidatorService", "-addr=localhost:50051"]
+
+    volumes: [enforcer-data:/root/.local/share/bip300301_enforcer]
+
+    command:
+      - --node-rpc-addr=mainchain:38332
+      - --node-rpc-user=user
+      - --node-rpc-pass=password
+      - --serve-grpc-addr=0.0.0.0:50051 # Expose over 0.0.0.0 so that other services can connect to it
+      - --serve-rpc-addr=0.0.0.0:8122 # Expose over 0.0.0.0 so that other services can connect to it
+      - --node-zmq-addr-sequence=tcp://mainchain:29000
+      - --enable-wallet
+      - --enable-mempool
+      - --wallet-auto-create
+
+  buf:
+    # Assign this to a special profile, so that `docker compose up` doesn't execute it. 
+    profiles: [cli]
+    image: bufbuild/buf
+
+volumes: 
+  mainchain-data:
+  enforcer-data:
+
