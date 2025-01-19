@@ -46,6 +46,21 @@ services:
       - --enable-wallet
       - --enable-mempool
       - --wallet-auto-create
+  
+  # TODO: must make the seed work... Either:
+  # --mnemonic-seed-phrase-path and a file path
+  # or a RPC 
+  thunder:
+    healthcheck:
+      test: ["CMD", "thunder_app_cli", "balance"]
+    image: ghcr.io/layertwo-labs/thunder:pr-9
+    restart: unless-stopped
+    volumes: [thunder-data:/root/.local/share/thunder]
+    entrypoint: 
+       - thunder_app
+       - --headless
+       - --mainchain-grpc-address=http://enforcer:50051
+       - --rpc-addr=0.0.0.0:6009
 
   buf:
     # Assign this to a special profile, so that `docker compose up` doesn't execute it. 
@@ -55,4 +70,5 @@ services:
 volumes: 
   mainchain-data:
   enforcer-data:
+  thunder-data:
 
