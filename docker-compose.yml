@@ -53,9 +53,13 @@ services:
   thunder:
     healthcheck:
       test: ["CMD", "thunder_app_cli", "balance"]
-    image: ghcr.io/layertwo-labs/thunder:pr-9
+    image: ghcr.io/layertwo-labs/thunder:sha-3796e65
     restart: unless-stopped
     volumes: [thunder-data:/root/.local/share/thunder]
+    ports: 
+      - 4009:4009 # P2P
+      - 6009:6009 # RPC
+
     entrypoint: 
        - thunder_app
        - --headless
