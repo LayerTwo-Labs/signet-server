@@ -9,11 +9,13 @@ services:
     # map the named volume to the data directory
     volumes: [mainchain-data:/home/drivechain/.drivechain]
     restart: unless-stopped
+    ports:
+      - "38333:38333" # P2P, exposed to the internet
+      - "127.0.0.1:38332:38332" # RPC, only available from host machine
     command:
       - drivechaind
       - -rpcuser=user
       - -rpcpassword=password
-      - -connect=172.105.148.135:38333
       - -server
       - -signet
       - -signetblocktime=60
@@ -35,6 +37,9 @@ services:
       test: ["CMD", "grpc_health_probe", "-service=cusf.mainchain.v1.ValidatorService", "-addr=localhost:50051"]
 
     volumes: [enforcer-data:/root/.local/share/bip300301_enforcer]
+    ports: 
+      - "127.0.0.1:50051:50051" # gRPC, only available from host machine
+      - "127.0.0.1:8122:8122" # JSON-RPC, only available from host machine
 
     command:
       - --node-rpc-addr=mainchain:38332
