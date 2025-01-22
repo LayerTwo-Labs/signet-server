@@ -36,8 +36,11 @@ services:
     # Uncomment these lines to adjust the RUST_LOG (or any other!) env var
     # environment: 
     # RUST_LOG: trace,h2=trace
-    healthcheck:
-      test: ["CMD", "grpc_health_probe", "-service=cusf.mainchain.v1.ValidatorService", "-addr=localhost:50051"]
+
+    # For some reason the health check causes the enforcer to be stuck processing gRPC requests. 
+    # We suspect it's because because of a bug on Tonic. 
+    # healthcheck:
+    #   test: ["CMD", "grpc_health_probe", "-service=cusf.mainchain.v1.ValidatorService", "-addr=localhost:50051"]
 
     volumes: [enforcer-data:/root/.local/share/bip300301_enforcer]
     ports: 
