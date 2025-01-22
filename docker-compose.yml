@@ -5,7 +5,7 @@ services:
     healthcheck:
      test: ["CMD", "drivechain-cli", "-rpcuser=user", "-rpcpassword=password", "-signet", "getblockchaininfo"]
 
-    image: ghcr.io/layertwo-labs/bitcoin-patched:sha-c169c54
+    image: ghcr.io/layertwo-labs/bitcoin-patched:sha-32e384a
     # map the named volume to the data directory
     volumes: [mainchain-data:/home/drivechain/.drivechain]
     restart: unless-stopped
@@ -31,9 +31,9 @@ services:
   # TODO: we're connecting to the default drivechain.live `electrs` instance. 
   # Run one as part of this infra stack?
   enforcer: 
-    image: ghcr.io/layertwo-labs/bip300301_enforcer:pr-136  
+    image: ghcr.io/layertwo-labs/bip300301_enforcer:latest
     restart: unless-stopped
-    # Uncomment these lines to adjust the RUST_LOG (or any other!) env var
+    # Adjust these lines to adjust the RUST_LOG (or any other!) env var
     environment: 
       RUST_LOG: trace,h2=info,hyper_util=info
 
@@ -75,6 +75,16 @@ services:
        - --headless
        - --mainchain-grpc-address=http://enforcer:50051
        - --rpc-addr=0.0.0.0:6009
+
+  # Can be used to run a container with the same volumes as the other services. 
+  # $ docker compose run --rm busybox sh
+  busybox:
+    profiles: [cli]
+    image: busybox
+    volumes: 
+      - mainchain-data:/mainchain-data
+      - enforcer-data:/enforcer-data
+      - thunder-data:/thunder-data
 
   buf:
     # Assign this to a special profile, so that `docker compose up` doesn't execute it. 
