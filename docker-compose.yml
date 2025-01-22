@@ -31,11 +31,11 @@ services:
   # TODO: we're connecting to the default drivechain.live `electrs` instance. 
   # Run one as part of this infra stack?
   enforcer: 
-    image: ghcr.io/layertwo-labs/bip300301_enforcer:pr-136
+    image: ghcr.io/layertwo-labs/bip300301_enforcer:latest  
     restart: unless-stopped
     # Uncomment these lines to adjust the RUST_LOG (or any other!) env var
-    # environment: 
-    # RUST_LOG: trace,h2=trace
+    environment: 
+      RUST_LOG: trace,h2=info,hyper_util=info
 
     # For some reason the health check causes the enforcer to be stuck processing gRPC requests. 
     # We suspect it's because because of a bug on Tonic. 
