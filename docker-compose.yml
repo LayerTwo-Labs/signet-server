@@ -63,7 +63,7 @@ services:
   thunder:
     healthcheck:
       test: ["CMD", "thunder_app_cli", "balance"]
-    image: ghcr.io/layertwo-labs/thunder:sha-3796e65
+    image: ghcr.io/layertwo-labs/thunder:sha-a08f85b
     restart: unless-stopped
     volumes: [thunder-data:/root/.local/share/thunder]
     ports: 
