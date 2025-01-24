@@ -31,7 +31,7 @@ services:
   # TODO: we're connecting to the default drivechain.live `electrs` instance. 
   # Run one as part of this infra stack?
   enforcer: 
-    image: ghcr.io/layertwo-labs/bip300301_enforcer:latest
+    image: ghcr.io/layertwo-labs/bip300301_enforcer:sha-4c7523e
     restart: unless-stopped
     # Adjust these lines to adjust the RUST_LOG (or any other!) env var
     environment: 
