@@ -63,9 +63,11 @@ services:
   thunder:
     healthcheck:
       test: ["CMD", "thunder_app_cli", "balance"]
-    image: ghcr.io/layertwo-labs/thunder:sha-a08f85b
+    image: ghcr.io/layertwo-labs/thunder:pr-16
     restart: unless-stopped
-    volumes: [thunder-data:/root/.local/share/thunder]
+    volumes: 
+      - thunder-data:/root/.local/share/thunder
+      - logs-data:/logs
     ports: 
       - "4009:4009/udp" # P2P, exposed to the internet, over UDP
       - "127.0.0.1:6009:6009" # RPC, only available from host machine
@@ -75,9 +77,15 @@ services:
        - --headless
        - --mainchain-grpc-address=http://enforcer:50051
        - --rpc-addr=0.0.0.0:6009
+       - --log-level=trace
+       - --log-level-file=trace
+       - --log-dir=/logs/thunder
 
   # Can be used to run a container with the same volumes as the other services. 
   # $ docker compose run --rm busybox sh
+
+  # Todays Thunder logs: 
+  #   $ docker compose run --rm busybox cat /logs/thunder/$(date +%Y-%m-%d).log | lnav
   busybox:
     profiles: [cli]
     image: busybox
@@ -85,6 +93,7 @@ services:
       - mainchain-data:/mainchain-data
       - enforcer-data:/enforcer-data
       - thunder-data:/thunder-data
+      - logs-data:/logs
 
   buf:
     # Assign this to a special profile, so that `docker compose up` doesn't execute it. 
@@ -95,4 +104,5 @@ volumes:
   mainchain-data:
   enforcer-data:
   thunder-data:
+  logs-data:
 
