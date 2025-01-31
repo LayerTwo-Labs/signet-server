@@ -61,21 +61,27 @@ services:
   # --mnemonic-seed-phrase-path and a file path
   # or a RPC 
   thunder:
+    # Cannot get UDP to play well with Docker. Unable to connect external 
+    # nodes to this one through the open internet. Works when running with 
+    # host mode!
+    network_mode: host 
     healthcheck:
       test: ["CMD", "thunder_app_cli", "balance"]
-    image: ghcr.io/layertwo-labs/thunder:pr-16
+    image: ghcr.io/layertwo-labs/thunder:latest
     restart: unless-stopped
     volumes: 
       - thunder-data:/root/.local/share/thunder
       - logs-data:/logs
-    ports: 
-      - "4009:4009/udp" # P2P, exposed to the internet, over UDP
-      - "127.0.0.1:6009:6009" # RPC, only available from host machine
+    # As long as we're running the container using the `host` network mode, 
+    # these are discarded. 
+    # ports: 
+    #  - "4009:4009/udp" # P2P, exposed to the internet, over UDP
+    #  - "127.0.0.1:6009:6009" # RPC, only available from host machine
 
     entrypoint: 
        - thunder_app
        - --headless
-       - --mainchain-grpc-address=http://enforcer:50051
+       - --mainchain-grpc-address=http://localhost:50051
        - --rpc-addr=0.0.0.0:6009
        - --log-level=trace
        - --log-level-file=trace
@@ -99,7 +105,7 @@ services:
     # Assign this to a special profile, so that `docker compose up` doesn't execute it. 
     profiles: [cli]
     image: bufbuild/buf
-
+  
 volumes: 
   mainchain-data:
   enforcer-data:
