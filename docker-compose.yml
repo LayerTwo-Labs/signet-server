@@ -56,7 +56,24 @@ services:
       - --enable-mempool
       - --wallet-auto-create
       - --log-level=trace
-  
+    
+  bitnames: 
+    image: ghcr.io/layertwo-labs/bitnames:pr-2
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "plain_bitnames_app_cli", "balance"]
+    # Bitnames uses the same networking stack as thunder, so doing the 
+    # same thing here. 
+    network_mode: host
+    volumes: 
+      - bitnames-data:/root/.local/share/plain_bitnames
+      - logs-data:/logs
+
+    command: 
+      - --headless
+      - --log-level=trace
+      - --main-addr=0.0.0.0:50051
+
   # TODO: must make the seed work... Either:
   # --mnemonic-seed-phrase-path and a file path
   # or a RPC 
@@ -110,5 +127,6 @@ volumes:
   mainchain-data:
   enforcer-data:
   thunder-data:
+  bitnames-data:
   logs-data:
 
