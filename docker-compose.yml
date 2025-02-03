@@ -31,7 +31,7 @@ services:
   # TODO: we're connecting to the default drivechain.live `electrs` instance. 
   # Run one as part of this infra stack?
   enforcer: 
-    image: ghcr.io/layertwo-labs/bip300301_enforcer:sha-4c7523e
+    image: ghcr.io/layertwo-labs/bip300301_enforcer:sha-8faa84c
     restart: unless-stopped
     # Adjust these lines to adjust the RUST_LOG (or any other!) env var
     environment: 
@@ -56,6 +56,7 @@ services:
       - --enable-mempool
       - --wallet-auto-create
       - --log-level=trace
+      - --wallet-electrum-host=electrs
     
   bitnames: 
     image: ghcr.io/layertwo-labs/bitnames:pr-2
@@ -84,7 +85,7 @@ services:
     network_mode: host 
     healthcheck:
       test: ["CMD", "thunder_app_cli", "balance"]
-    image: ghcr.io/layertwo-labs/thunder:latest
+    image: ghcr.io/layertwo-labs/thunder:sha-a781bf3
     restart: unless-stopped
     volumes: 
       - thunder-data:/root/.local/share/thunder
@@ -103,6 +104,35 @@ services:
        - --log-level=trace
        - --log-level-file=trace
        - --log-dir=/logs/thunder
+
+  # TODO: how do we enable SSL here?
+  electrs:
+    image: mempool/electrs
+    # TODO: find something that works here with what's installed on the box
+    # healthcheck:
+    #  test: ["CMD", "curl", "--fail", "http://localhost:3000/blocks/tip/hash"]
+    environment:
+      RUST_BACKTRACE: 1
+
+    restart: unless-stopped
+    ports:
+      - 50001:50001 # Electrum port!
+
+    volumes: [electrs-data:/app/db]
+
+    # https://github.com/Blockstream/esplora?tab=readme-ov-file#how-to-run-the-explorer-for-bitcoin-mainnet
+    command:
+      - -vvv # pretty verbose logging
+      - --timestamp
+      - --cookie=user:password
+      - --daemon-rpc-addr=mainchain:38332
+      - --jsonrpc-import
+      - --db-dir=/app/db
+      - --network=signet
+      - --http-addr=0.0.0.0:3000
+      - --electrum-rpc-addr=0.0.0.0:50001
+      - --electrum-txs-limit=30000
+      - --cors=*
 
   # Can be used to run a container with the same volumes as the other services. 
   # $ docker compose run --rm busybox sh
@@ -128,5 +158,6 @@ volumes:
   enforcer-data:
   thunder-data:
   bitnames-data:
+  electrs-data:
   logs-data:
 
