@@ -31,7 +31,7 @@ services:
   # TODO: we're connecting to the default drivechain.live `electrs` instance. 
   # Run one as part of this infra stack?
   enforcer: 
-    image: ghcr.io/layertwo-labs/bip300301_enforcer:sha-8faa84c
+    image: ghcr.io/layertwo-labs/bip300301_enforcer:sha-471566e
     restart: unless-stopped
     # Adjust these lines to adjust the RUST_LOG (or any other!) env var
     environment: 
@@ -46,6 +46,8 @@ services:
       - "127.0.0.1:8122:8122" # JSON-RPC, only available from host machine
 
     command:
+      - --log-format=json
+      - --log-level=trace
       - --node-rpc-addr=mainchain:38332
       - --node-rpc-user=user
       - --node-rpc-pass=password
@@ -55,7 +57,6 @@ services:
       - --enable-wallet
       - --enable-mempool
       - --wallet-auto-create
-      - --log-level=trace
       - --wallet-electrum-host=electrs
     
   bitnames: 
