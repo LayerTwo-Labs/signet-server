@@ -87,7 +87,7 @@ services:
     network_mode: host 
     healthcheck:
       test: ["CMD", "thunder_app_cli", "balance"]
-    image: ghcr.io/layertwo-labs/thunder:sha-4cee4eb
+    image: ghcr.io/layertwo-labs/thunder:sha-cad1d1b
     restart: unless-stopped
     volumes: 
       - thunder-data:/root/.local/share/thunder
@@ -101,8 +101,8 @@ services:
     entrypoint: 
        - thunder_app
        - --headless
-       - --mainchain-grpc-address=http://localhost:50051
-       - --rpc-addr=0.0.0.0:6009
+       - --mainchain-grpc-url=http://localhost:50051
+       - --rpc-addr=127.0.0.0:6009
        - --log-level=trace
        - --log-level-file=trace
        - --log-dir=/logs/thunder
@@ -137,11 +137,22 @@ services:
       - --cors=*
   
   fast-withdraw-server: 
+    # since thunder and bitnames are running with host networking, this 
+    # needs to as well in order to find them
+    network_mode: host
+    restart: unless-stopped
+    environment:
+      BITCOIN_RPC_USER: user
+      BITCOIN_RPC_PASS: password
+      BITCOIN_RPC_HOST: localhost
+      BITCOIN_RPC_PORT: 38332
+      THUNDER_RPC_URL: http://127.0.0.0:6009
+      PORT: 3333 
+      HOST: 0.0.0.0
+
     # TODO: update this once the PR is merged into master
     # https://github.com/LayerTwo-Labs/fast-withdraw-server-node/pull/1
     image: ghcr.io/torkelrogstad/fast-withdraw-server:pr-1
-    ports:
-      - 3333:3333
 
   # Can be used to run a container with the same volumes as the other services. 
   # $ docker compose run --rm busybox sh
