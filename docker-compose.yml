@@ -86,7 +86,7 @@ services:
     # host mode!
     network_mode: host 
     healthcheck:
-      test: ["CMD", "thunder_app_cli", "balance"]
+      test: ["CMD", "thunder_app_cli", "--rpc-url=http://127.0.0.0:6009", "balance"]
     image: ghcr.io/layertwo-labs/thunder:sha-cad1d1b
     restart: unless-stopped
     volumes: 
