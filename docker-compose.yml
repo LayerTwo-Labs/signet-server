@@ -31,7 +31,7 @@ services:
   # TODO: we're connecting to the default drivechain.live `electrs` instance. 
   # Run one as part of this infra stack?
   enforcer: 
-    image: ghcr.io/layertwo-labs/bip300301_enforcer:sha-89a63ac
+    image: ghcr.io/layertwo-labs/bip300301_enforcer:sha-4c9a84b
     restart: unless-stopped
     # Adjust these lines to adjust the RUST_LOG (or any other!) env var
     environment: 
@@ -59,6 +59,8 @@ services:
       - --wallet-auto-create
       - --wallet-electrum-host=electrs
       - --wallet-skip-periodic-sync
+      # mainchain Bitcoin Core address
+      - --signet-miner-coinbase-recipient=tb1qduth40j5r3v3rjxfd0qefpnldqzpt00anf8ajl
     
   bitnames: 
     image: ghcr.io/layertwo-labs/bitnames:sha-1a0d52c
@@ -87,7 +89,7 @@ services:
     network_mode: host 
     healthcheck:
       test: ["CMD", "thunder_app_cli", "--rpc-url=http://127.0.0.0:6009", "balance"]
-    image: ghcr.io/layertwo-labs/thunder:sha-cad1d1b
+    image: ghcr.io/layertwo-labs/thunder:sha-250841e
     restart: unless-stopped
     volumes: 
       - thunder-data:/root/.local/share/thunder
@@ -119,6 +121,7 @@ services:
     restart: unless-stopped
     ports:
       - 50001:50001 # Electrum port!
+      - 3000:3000 # Esplora REST API
 
     volumes: [electrs-data:/app/db]
 
