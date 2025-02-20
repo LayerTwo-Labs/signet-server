@@ -28,14 +28,14 @@ services:
       - -fallbackfee=0.00021
       - -zmqpubsequence=tcp://0.0.0.0:29000
 
-  # TODO: we're connecting to the default drivechain.live `electrs` instance. 
-  # Run one as part of this infra stack?
   enforcer: 
-    image: ghcr.io/layertwo-labs/bip300301_enforcer:sha-4c9a84b
+    image: ghcr.io/layertwo-labs/bip300301_enforcer:sha-28d8143
+    pull_policy: always
     restart: unless-stopped
     # Adjust these lines to adjust the RUST_LOG (or any other!) env var
     environment: 
       RUST_LOG: trace,h2=info,hyper_util=info
+      RUST_BACKTRACE: 1
 
     healthcheck:
        test: ["CMD", "grpc_health_probe", "-service=cusf.mainchain.v1.ValidatorService", "-addr=localhost:50051"]
