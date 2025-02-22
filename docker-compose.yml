@@ -156,6 +156,25 @@ services:
     # TODO: update this once the PR is merged into master
     # https://github.com/LayerTwo-Labs/fast-withdraw-server-node/pull/1
     image: ghcr.io/torkelrogstad/fast-withdraw-server:pr-1
+  
+  faucet-backend:
+    restart: unless-stopped
+    image: ghcr.io/layertwo-labs/faucet-backend:sha-660f7d6
+    healthcheck: 
+      test: ["CMD", "curl", "--fail", "-H", "Content-Type: application/json", "-X", "POST", "localhost:8082/faucet.v1.FaucetService/ListClaims"]
+    ports: 
+      - 8082:8082
+    command: 
+      - faucetd
+      - --bitcoincore.address=mainchain:38332
+      - --bitcoincore.rpcuser=user
+      - --bitcoincore.rpcpassword=password
+      - --enforcer.host=enforcer
+
+  faucet-frontend:
+    ports: 
+      - 8081:80
+    image: ghcr.io/layertwo-labs/faucet-frontend:sha-0422ae7
 
   # Can be used to run a container with the same volumes as the other services. 
   # $ docker compose run --rm busybox sh

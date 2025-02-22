@@ -1,0 +1,11 @@
+{
+	debug
+}
+
+node.drivechain.info {
+	handle_path /api/* {
+		reverse_proxy h2c://127.0.0.1:8082
+	}
+
+	reverse_proxy http://localhost:8081
+}
