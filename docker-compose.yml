@@ -106,7 +106,7 @@ services:
     network_mode: host 
     healthcheck:
       test: ["CMD", "thunder_app_cli", "--rpc-url=http://127.0.0.0:6009", "balance"]
-    image: ghcr.io/layertwo-labs/thunder:sha-250841e
+    image: ghcr.io/layertwo-labs/thunder:sha-58fe8ba
     restart: unless-stopped
     volumes: 
       - thunder-data:/root/.local/share/thunder
@@ -121,7 +121,10 @@ services:
        - thunder_app
        - --headless
        - --mainchain-grpc-url=http://localhost:50051
-       - --rpc-addr=127.0.0.0:6009
+       # For Thunder to be reachable from other containers (via host-gateway) , 
+       # we need to bind to 0.0.0.0. This means that the host machine needs to 
+       # make sure to /not/ expose this to the open internet!
+       - --rpc-addr=0.0.0.0:6009
        - --log-level=trace
        - --log-level-file=trace
        - --log-dir=/logs/thunder
@@ -176,22 +179,28 @@ services:
   
   faucet-backend:
     restart: unless-stopped
-    image: ghcr.io/layertwo-labs/faucet-backend:sha-660f7d6
+    image: ghcr.io/layertwo-labs/faucet-backend:sha-171c333
+    pull_policy: always
     healthcheck: 
       test: ["CMD", "curl", "--fail", "-H", "Content-Type: application/json", "-X", "POST", "localhost:8082/faucet.v1.FaucetService/ListClaims"]
     ports: 
       - 8082:8082
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     command: 
       - faucetd
       - --bitcoincore.address=mainchain:38332
       - --bitcoincore.rpcuser=user
       - --bitcoincore.rpcpassword=password
       - --enforcer.host=enforcer
+      - --thunder.url=http://host.docker.internal:6009
+      - --listen=0.0.0.0:8082
 
   faucet-frontend:
     ports: 
       - 8081:80
-    image: ghcr.io/layertwo-labs/faucet-frontend:sha-0422ae7
+    pull_policy: always
+    image: ghcr.io/layertwo-labs/faucet-frontend:sha-171c333
 
   # Can be used to run a container with the same volumes as the other services. 
   # $ docker compose run --rm busybox sh
