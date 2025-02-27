@@ -61,20 +61,37 @@ services:
       - --wallet-skip-periodic-sync
       # mainchain Bitcoin Core address
       - --signet-miner-coinbase-recipient=tb1qduth40j5r3v3rjxfd0qefpnldqzpt00anf8ajl
-    
-  bitnames: 
+
+  bitassets:
+    image: ghcr.io/layertwo-labs/bitassets:sha-e64f7b0
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "plain_bitassets_app_cli", "balance"]
+    # Bitassets uses the same networking stack as thunder, so doing the
+    # same thing here.
+    network_mode: host
+    volumes:
+      - bitassets-data:/root/.local/share/plain_bitassets
+      - logs-data:/logs
+
+    command:
+      - --headless
+      - --log-level=trace
+      - --main-addr=0.0.0.0:50051
+
+  bitnames:
     image: ghcr.io/layertwo-labs/bitnames:sha-72c41b3
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "plain_bitnames_app_cli", "balance"]
-    # Bitnames uses the same networking stack as thunder, so doing the 
-    # same thing here. 
+    # Bitnames uses the same networking stack as thunder, so doing the
+    # same thing here.
     network_mode: host
-    volumes: 
+    volumes:
       - bitnames-data:/root/.local/share/plain_bitnames
       - logs-data:/logs
 
-    command: 
+    command:
       - --headless
       - --log-level=trace
       - --main-addr=0.0.0.0:50051
@@ -140,7 +157,7 @@ services:
       - --cors=*
   
   fast-withdraw-server: 
-    # since thunder and bitnames are running with host networking, this 
+    # since thunder, bitassets, and bitnames are running with host networking, this
     # needs to as well in order to find them
     network_mode: host
     restart: unless-stopped
@@ -199,6 +216,7 @@ volumes:
   mainchain-data:
   enforcer-data:
   thunder-data:
+  bitassets-data:
   bitnames-data:
   electrs-data:
   logs-data:
