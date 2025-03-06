@@ -63,7 +63,7 @@ services:
       - --signet-miner-coinbase-recipient=tb1qduth40j5r3v3rjxfd0qefpnldqzpt00anf8ajl
 
   bitassets:
-    image: ghcr.io/layertwo-labs/bitassets:sha-e64f7b0
+    image: ghcr.io/layertwo-labs/bitassets:sha-e7c9f9a
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "plain_bitassets_app_cli", "balance"]
@@ -80,7 +80,7 @@ services:
       - --mainchain-grpc-host=0.0.0.0
 
   bitnames:
-    image: ghcr.io/layertwo-labs/bitnames:sha-53a8e34
+    image: ghcr.io/layertwo-labs/bitnames:sha-2c656da
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "plain_bitnames_app_cli", "balance"]
@@ -111,7 +111,7 @@ services:
     network_mode: host 
     healthcheck:
       test: ["CMD", "thunder_app_cli", "--rpc-url=http://127.0.0.0:6009", "balance"]
-    image: ghcr.io/layertwo-labs/thunder:sha-58fe8ba
+    image: ghcr.io/layertwo-labs/thunder:sha-2222d53
     restart: unless-stopped
     volumes: 
       - thunder-data:/root/.local/share/thunder
