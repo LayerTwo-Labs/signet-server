@@ -80,7 +80,7 @@ services:
       - --main-addr=0.0.0.0:50051
 
   bitnames:
-    image: ghcr.io/layertwo-labs/bitnames:sha-72c41b3
+    image: ghcr.io/layertwo-labs/bitnames:sha-53a8e34
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "plain_bitnames_app_cli", "balance"]
@@ -94,7 +94,8 @@ services:
     command:
       - --headless
       - --log-level=trace
-      - --main-addr=0.0.0.0:50051
+      - --mainchain-grpc-host=0.0.0.0
+      - --mainchain-grpc-port=50051
        # For Thunder to be reachable from other containers (via host-gateway) , 
        # we need to bind to 0.0.0.0. This means that the host machine needs to 
        # make sure to /not/ expose this to the open internet!
@@ -183,7 +184,7 @@ services:
   
   faucet-backend:
     restart: unless-stopped
-    image: ghcr.io/layertwo-labs/faucet-backend:sha-171c333
+    image: ghcr.io/layertwo-labs/faucet-backend:sha-dc517e4
     pull_policy: always
     healthcheck: 
       test: ["CMD", "curl", "--fail", "-H", "Content-Type: application/json", "-X", "POST", "localhost:8082/faucet.v1.FaucetService/ListClaims"]
@@ -197,6 +198,8 @@ services:
       - --bitcoincore.rpcuser=user
       - --bitcoincore.rpcpassword=password
       - --enforcer.host=enforcer
+      - --bitnames.url=http://host.docker.internal:6002
+      - --bitassets.url=http://host.docker.internal:6004
       - --thunder.url=http://host.docker.internal:6009
       - --listen=0.0.0.0:8082
 
@@ -204,7 +207,7 @@ services:
     ports: 
       - 8081:80
     pull_policy: always
-    image: ghcr.io/layertwo-labs/faucet-frontend:sha-171c333
+    image: ghcr.io/layertwo-labs/faucet-frontend:sha-1337db1
 
   # Can be used to run a container with the same volumes as the other services. 
   # $ docker compose run --rm busybox sh
