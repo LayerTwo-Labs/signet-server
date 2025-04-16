@@ -1,14 +1,37 @@
 # Run Your Own Play-Money Server
 
+## Docker
+
+The instructions below are for running native binaries. If you instead prefer
+running things through Docker, take a look at 
+[`docker-compose.yml`](./docker-compose.yml). In there you'll find configuration
+for L1 Bitcoin Core, the BIP300/301 enforcer, several sidechains, Electrum, a 
+L2 fast withdrawal server and L1 faucet. 
+
+A couple of important notes, if you want to run this in Docker: 
+
+1. The signet setup described in section 2 and 3 still needs to be 
+   performed, in such a way that the signet mining key exists within
+   the Bitcoin Core L1 wallet
+2. In order to receive the freshly mined signet coins you need to 
+   update the `--signet-miner-coinbase-recipient` parameter to 
+   the BIP300/301 enforcer to an address belonging to your Bitcoin Core
+   L1 wallet. 
+
+Note that some of the values in the 
+configuration file might need slight changes, 
+
+## Native binaries
+
 ### 1. Basics
 
-* Spin up a new server (such as linode), with Ubuntu 24 (or whatever you prefer).
+* Spin up a new server (such as Linode), with Ubuntu 24 (or whatever you prefer).
 
 * To it, add:
 * * [Bitcoin Core (patched)](https://releases.drivechain.info/L1-bitcoin-patched-latest-x86_64-unknown-linux-gnu.zip)
-* * [The Bip300 Enforcer](https://releases.drivechain.info/bip300301-enforcer-latest-x86_64-unknown-linux-gnu.zip)
+* * [The BIP 300/301 Enforcer](https://releases.drivechain.info/bip300301-enforcer-latest-x86_64-unknown-linux-gnu.zip)
 
-Create bitcoin.conf (at /.bitcoin/bitcoin.conf) , and make sure it contains:
+Create `bitcoin.conf` (at `$HOME/.bitcoin/bitcoin.conf`) , and make sure it contains:
 
     rpcuser=user
     rpcpassword=password
@@ -21,7 +44,7 @@ Create bitcoin.conf (at /.bitcoin/bitcoin.conf) , and make sure it contains:
       # 1 minute block times. Note that /everyone/ who connects to this signet
       # must have this exact configuration value.
 
-Step 2 (below) will add the signetchallenge=... line. 
+Step 2 (below) will add the `signetchallenge=...` line. 
 
 ### 2. Create a Mining Key
 
@@ -29,58 +52,75 @@ This key will sign a new block into existence, every 60 seconds.
 
 Note: This is using Fish shell, if you are using Bash or Zsh then ask an AI for help.
 
-    $ mkdir l2l-signet
-    $ ./build/src/bitcoind -daemon -regtest -datadir=$PWD/l2l-signet
+    $ mkdir custom-signet
+    $ ./build/src/bitcoind -daemon -regtest -datadir=$PWD/custom-signet
 
-    $ ./build/src/bitcoin-cli -regtest -datadir=$PWD/l2l-signet \
-         createwallet l2l-signet
+    $ ./build/src/bitcoin-cli -regtest -datadir=$PWD/custom-signet \
+         createwallet custom-signet
 
-    $ set signet_challenge (./build/src/bitcoin-cli -regtest -datadir=$PWD/l2l-signet \
+    $ set signet_challenge (./build/src/bitcoin-cli -regtest -datadir=$PWD/custom-signet \
                          getaddressinfo $address | jq -r .scriptPubKey)
-
-    $ echo signetchallenge=$signet_challenge >> l2l-signet/bitcoin.conf
+    
+    # Add the output of this command to your bitcoin.conf file!
+    $ echo signetchallenge=$signet_challenge 
 
     # Need the wallet descriptors to be able to import the wallet into
-    $ set descriptors (./build/src/bitcoin-cli -regtest -datadir=$PWD/l2l-signet \
+    $ set descriptors (./build/src/bitcoin-cli -regtest -datadir=$PWD/custom-signet \
                          listdescriptors true | jq -r .descriptors)
 
     # We're finished with the regtest wallet!
-    $ ./build/src/bitcoin-cli -regtest -datadir=$PWD/l2l-signet stop
+    $ ./build/src/bitcoin-cli -regtest -datadir=$PWD/custom-signet stop
 
 
 ### 3. Create the signet wallet
 
 
-    $ ./build/src/bitcoind -daemon -signet -datadir=$PWD/l2l-signet
+    $ ./build/src/bitcoind -daemon -signet -datadir=$PWD/custom-signet
 
-    $ ./build/src/bitcoin-cli -signet -datadir=$PWD/l2l-signet \
-         createwallet l2l-signet
+    $ ./build/src/bitcoin-cli -signet -datadir=$PWD/custom-signet \
+         createwallet custom-signet
 
-    $ ./build/src/bitcoin-cli -signet -datadir=$PWD/l2l-signet \
+    $ ./build/src/bitcoin-cli -signet -datadir=$PWD/custom-signet \
         importdescriptors "$descriptors"
+    
+    # Save an address from the wallet. This will be used for mining
+    # purposes, later. 
+    $ set address (./build/src/bitcoin-cli -signet -datadir=$PWD/custom-signet getnewaddress)
 
 
-### 4. Start mining
+### 4. Start the enforcer
 
-This will run the 'generate' command, creating a new block on your network every 60 seconds. 
+    $ set mining_address (./build/src/bitcoin-cli -signet getnewaddress)
+    $ ./bip300301_enforcer \
+        --node-rpc-addr=localhost:38332 \
+        --node-rpc-user=user \
+        --node-rpc-pass=password \
+        --node-zmq-addr-sequence=tcp://0.0.0.0:29000 \
+        --enable-wallet \
+        --wallet-auto-create \
+        --signet-miner-coinbase-recipient=$address
 
+### 5. Start mining
 
-    $ set address (./build/src/bitcoin-cli -signet -datadir=$PWD/l2l-signet getnewaddress)
+Mining blocks happen through a gRPC endpoint on the BIP300/301 enforcer wallet. 
+This is so we're able to construct the necessary BIP300 coinbase messages. 
 
-    $ ./contrib/signet/miner \
-        --cli "bitcoin-cli -signet -datadir=$PWD/l2l-signet" \
-        generate --address $address \
-        --grind-cmd "$PWD/build/src/bitcoin-util grind" \
-        --min-nbits --ongoing --block-interval 60
+Calling the endpoint can be done with the [Buf CLI](https://buf.build/docs/cli/installation/). 
 
+    $ buf curl --protocol grpc \
+        --http2-prior-knowledge \
+        http://localhost:50051/cusf.mainchain.v1.WalletService/GenerateBlocks
 
-You now have your own play money server.
+If you want to continuously generate blocks you could run this command
+in a loop with 1 minute wait times in between, or configure a Cron job. 
 
-### 5. Give This Info To Your Friends
+Congrats, you now have your own play money server!
+
+### 6. Give This Info To Your Friends
 
 Those joining the network (ie, non-mining nodes) must have the same bitcoin.conf , plus an "addnode" line.
 
-The addnode line is your server's IP address + port 8332 . For us at L2L, this is 172.105.148.135:8332 :
+The `addnode` line is your server's IP address + port 8332. The L2L hosted signet server runs on `172.105.148.135:8332`.
 
     rpcuser=user
     rpcpassword=password
@@ -92,19 +132,4 @@ The addnode line is your server's IP address + port 8332 . For us at L2L, this i
     zmqpubsequence=tcp://0.0.0.0:29000
     addnode=172.105.148.135:8332
 
-But yours will have different values for "addnode", "signetchallenge".
-
-### 6. Activate a Sidechain
-
-The file mine_signet.sh will attempt to activate the thunder sidechain in slot 1, and mine a few blocks. 
-
-### 7. Checking in on the Mining Server
-
-If the mining server crashes (or stops for any reason), you can examine it by:
-
-* ssh into server
-* su [your user name]
-* cd into /home/[your user name]
-* run ps aux | grep mine_signet to determine if the mining script is running
-
-Then you can restart it by re-running the commands in Step 4.
+But yours will have different values for `addnode` and `signetchallenge`.
