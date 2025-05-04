@@ -257,6 +257,7 @@ services:
   
   faucet-backend:
     restart: unless-stopped
+    # Find image-tags here: https://github.com/LayerTwo-Labs/faucet-backend/pkgs/container/faucet-backend
     image: ghcr.io/layertwo-labs/faucet-backend:sha-dc517e4
     pull_policy: always
     healthcheck: 
@@ -280,6 +281,7 @@ services:
     ports: 
       - 8081:80
     pull_policy: always
+    # Find image-tags here: https://github.com/LayerTwo-Labs/faucet-frontend/pkgs/container/faucet-frontend
     image: ghcr.io/layertwo-labs/faucet-frontend:sha-5fe2737
 
   # Can be used to run a container with the same volumes as the other services. 
