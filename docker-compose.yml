@@ -134,6 +134,73 @@ services:
        - --log-level-file=trace
        - --log-dir=/logs/thunder
 
+  mempool-db:
+    environment:
+      MYSQL_DATABASE: "mempool"
+      MYSQL_USER: "mempool"
+      MYSQL_PASSWORD: "mempool"
+      MYSQL_ROOT_PASSWORD: "admin"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "mempool",
+          "-pmempool",
+        ]
+    image: mariadb:10.5.21
+    restart: unless-stopped
+    stop_grace_period: 1m
+    volumes: [mysql-data:/var/lib/mysql]
+
+  mempool-web:
+    environment:
+      FRONTEND_HTTP_PORT: 8080
+      BACKEND_MAINNET_HTTP_HOST: mempool-api
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080"]
+    image: mempool/frontend:v3.2.1
+    restart: unless-stopped
+    stop_grace_period: 1m
+    command: "./wait-for mempool-db:3306 --timeout=720 -- nginx -g 'daemon off;'"
+    ports: 
+      - 8080:8080 # should be reachable externally
+
+  mempool-api:
+    depends_on: [mempool-db]
+
+    # conf: https://github.com/mempool/mempool/blob/e3c3f31ddbf9543db12ef4f7e5032566757d31f9/backend/mempool-config.sample.json#
+    environment:
+      MEMPOOL_NETWORK: signet
+      MEMPOOL_BACKEND: "electrum"
+      ELECTRUM_HOST: electrs
+      ELECTRUM_PORT: 50001
+      ELECTRUM_TLS_ENABLED: "false"
+      CORE_RPC_HOST: mainchain
+      CORE_RPC_PORT: 38332
+      CORE_RPC_USERNAME: user
+      CORE_RPC_PASSWORD: password
+      DATABASE_ENABLED: "true"
+      DATABASE_HOST: "mempool-db"
+      DATABASE_DATABASE: "mempool"
+      DATABASE_USERNAME: "mempool"
+      DATABASE_PASSWORD: "mempool"
+      STATISTICS_ENABLED: "true"
+      FIAT_PRICE_ENABLED: false
+
+    # 'latest' is on an ancient version
+    image: mempool/backend:v3.2.1
+    restart: unless-stopped
+    stop_grace_period: 1m
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "localhost:8999/api/v1/backend-info"]
+    command: "./wait-for-it.sh mempool-db:3306 --timeout=720 --strict -- ./start.sh"
+    volumes: [mempool-api-data:/backend/cache]
+
   # TODO: how do we enable SSL here?
   electrs:
     image: mempool/electrs
@@ -236,4 +303,5 @@ volumes:
   bitnames-data:
   electrs-data:
   logs-data:
-
+  mysql-data:
+  mempool-api-data:
