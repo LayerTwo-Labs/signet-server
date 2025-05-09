@@ -29,7 +29,7 @@ services:
       - -zmqpubsequence=tcp://0.0.0.0:29000
 
   enforcer: 
-    image: ghcr.io/layertwo-labs/bip300301_enforcer:sha-28d8143
+    image: ghcr.io/layertwo-labs/bip300301_enforcer:sha-ccd91d0
     pull_policy: always
     restart: unless-stopped
     # Adjust these lines to adjust the RUST_LOG (or any other!) env var
@@ -63,7 +63,7 @@ services:
       - --signet-miner-coinbase-recipient=tb1qduth40j5r3v3rjxfd0qefpnldqzpt00anf8ajl
 
   bitassets:
-    image: ghcr.io/layertwo-labs/bitassets:sha-e7c9f9a
+    image: ghcr.io/layertwo-labs/bitassets:sha-6a1fbdc
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "plain_bitassets_app_cli", "balance"]
@@ -80,7 +80,7 @@ services:
       - --mainchain-grpc-host=0.0.0.0
 
   bitnames:
-    image: ghcr.io/layertwo-labs/bitnames:sha-2c656da
+    image: ghcr.io/layertwo-labs/bitnames:sha-bfab1ea
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "plain_bitnames_app_cli", "balance"]
@@ -111,7 +111,7 @@ services:
     network_mode: host 
     healthcheck:
       test: ["CMD", "thunder_app_cli", "--rpc-url=http://127.0.0.0:6009", "balance"]
-    image: ghcr.io/layertwo-labs/thunder:sha-2222d53
+    image: ghcr.io/layertwo-labs/thunder:sha-c1de12a
     restart: unless-stopped
     volumes: 
       - thunder-data:/root/.local/share/thunder
