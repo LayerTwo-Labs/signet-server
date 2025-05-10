@@ -241,14 +241,14 @@ services:
       BITCOIN_RPC_PASS: password
       BITCOIN_RPC_URL: http://mainchain:38332
       THUNDER_RPC_URL: http://host.docker.internal:6009
-      BITNAMES_RPC_ADDR: host.docker.internal:6002
+      BITNAMES_RPC_URL: http://host.docker.internal:6002
       PORT: 3333 
       HOST: 0.0.0.0
 
     ports:
       - 3333:3333
 
-    image: ghcr.io/layertwo-labs/fast-withdraw-server:sha-d156287
+    image: ghcr.io/layertwo-labs/fast-withdraw-server:sha-8abfc79
   
   faucet-backend:
     restart: unless-stopped
