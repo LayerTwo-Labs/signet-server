@@ -27,6 +27,7 @@ services:
       - -txindex
       - -fallbackfee=0.00021
       - -zmqpubsequence=tcp://0.0.0.0:29000
+      - -rest
 
   enforcer: 
     image: ghcr.io/layertwo-labs/bip300301_enforcer:sha-ccd91d0
