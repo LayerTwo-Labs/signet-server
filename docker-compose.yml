@@ -30,7 +30,7 @@ services:
       - -rest
 
   enforcer: 
-    image: ghcr.io/layertwo-labs/bip300301_enforcer:sha-ccd91d0
+    image: ghcr.io/layertwo-labs/bip300301_enforcer:sha-ae376cb
     pull_policy: always
     restart: unless-stopped
     # Adjust these lines to adjust the RUST_LOG (or any other!) env var
@@ -64,7 +64,7 @@ services:
       - --signet-miner-coinbase-recipient=tb1qduth40j5r3v3rjxfd0qefpnldqzpt00anf8ajl
 
   bitassets:
-    image: ghcr.io/layertwo-labs/bitassets:sha-6a1fbdc
+    image: ghcr.io/layertwo-labs/bitassets:sha-474b5d1
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "plain_bitassets_app_cli", "balance"]
@@ -79,9 +79,14 @@ services:
       - --headless
       - --log-level=trace
       - --mainchain-grpc-host=0.0.0.0
+      # For BitAssets to be reachable from other containers (via host-gateway) ,
+      # we need to bind to 0.0.0.0. This means that the host machine needs to
+      # make sure to /not/ expose this to the open internet!
+      - --rpc-host=0.0.0.0
+      - --rpc-port=6004
 
   bitnames:
-    image: ghcr.io/layertwo-labs/bitnames:sha-bfab1ea
+    image: ghcr.io/layertwo-labs/bitnames:sha-1864e8d
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "plain_bitnames_app_cli", "balance"]
@@ -112,7 +117,7 @@ services:
     network_mode: host 
     healthcheck:
       test: ["CMD", "thunder_app_cli", "--rpc-url=http://127.0.0.0:6009", "balance"]
-    image: ghcr.io/layertwo-labs/thunder:sha-c1de12a
+    image: ghcr.io/layertwo-labs/thunder:sha-a1b96a0
     restart: unless-stopped
     volumes: 
       - thunder-data:/root/.local/share/thunder
@@ -275,7 +280,7 @@ services:
     ports: 
       - 8081:80
     pull_policy: always
-    image: ghcr.io/layertwo-labs/faucet-frontend:sha-1337db1
+    image: ghcr.io/layertwo-labs/faucet-frontend:sha-5fe2737
 
   # Can be used to run a container with the same volumes as the other services. 
   # $ docker compose run --rm busybox sh
