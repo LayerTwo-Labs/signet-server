@@ -251,7 +251,7 @@ services:
       HOST: 0.0.0.0
 
     ports:
-      - 3333:3333
+      - 127.0.0.1:3333:3333
 
     image: ghcr.io/layertwo-labs/fast-withdraw-server:sha-8abfc79
   
