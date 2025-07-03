@@ -139,6 +139,28 @@ services:
        - --log-level=trace
        - --log-level-file=trace
        - --log-dir=/logs/thunder
+  
+  zside: 
+    image: ghcr.io/iwakura-rein/thunder-orchard:sha-e13b1db
+    restart: unless-stopped
+    # Cannot get UDP to play well with Docker. Unable to connect external 
+    # nodes to this one through the open internet. Works when running with 
+    # host mode!
+    network_mode: host
+    healthcheck:
+      test: ["CMD", "thunder_orchard_app_cli", "--rpc-url=http://127.0.0.0:6098", "balance"]
+    # TODO: adjust this once we can move away from network_mode: host
+    # ports: [4098:4098/udp] # P2P
+    volumes: 
+      - zside-data:/root/.local/share/thunder-orchard
+      - logs-data:/logs
+    command: 
+      - --headless
+      - --mainchain-grpc-url=http://localhost:50051
+      - --rpc-addr=0.0.0.0:6098
+      - --log-level=trace
+      - --log-level-file=trace
+      - --log-dir=/logs/zside
 
   mempool-db:
     environment:
@@ -258,7 +280,7 @@ services:
   faucet-backend:
     restart: unless-stopped
     # Find image-tags here: https://github.com/LayerTwo-Labs/faucet-backend/pkgs/container/faucet-backend
-    image: ghcr.io/layertwo-labs/faucet-backend:sha-dc517e4
+    image: ghcr.io/layertwo-labs/faucet-backend:sha-5a04328
     pull_policy: always
     healthcheck: 
       test: ["CMD", "curl", "--fail", "-H", "Content-Type: application/json", "-X", "POST", "localhost:8082/faucet.v1.FaucetService/ListClaims"]
@@ -275,6 +297,7 @@ services:
       - --bitnames.url=http://host.docker.internal:6002
       - --bitassets.url=http://host.docker.internal:6004
       - --thunder.url=http://host.docker.internal:6009
+      - --zside.url=http://host.docker.internal:6098
       - --listen=0.0.0.0:8082
 
   faucet-frontend:
@@ -296,6 +319,7 @@ services:
       - mainchain-data:/mainchain-data
       - enforcer-data:/enforcer-data
       - thunder-data:/thunder-data
+      - zside-data:/zside-data
       - logs-data:/logs
 
   buf:
@@ -307,6 +331,7 @@ volumes:
   mainchain-data:
   enforcer-data:
   thunder-data:
+  zside-data:
   bitassets-data:
   bitnames-data:
   electrs-data:

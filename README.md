@@ -133,3 +133,42 @@ The `addnode` line is your server's IP address + port 8332. The L2L hosted signe
     addnode=172.105.148.135:8332
 
 But yours will have different values for `addnode` and `signetchallenge`.
+
+### 7. Activate a sidechain
+
+```bash
+
+# Create the initial proposal
+echo '{
+  "sidechain_id": 98,
+  "declaration": {
+    "v0": {
+      "title": "zSide",
+      "description": "A sidechain implementing the Zcash Orchard protocol",
+      "hash_id_1": {
+        "hex": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "hash_id_2": {
+        "hex": "0000000000000000000000000000000000000000"
+      }
+    }
+  }
+}' > create_sidechain_proposal_request.json
+
+$ buf curl --emit-defaults --protocol grpc \
+    --http2-prior-knowledge \
+    -d @create_sidechain_proposal_request.json \
+    http://localhost:50051/cusf.mainchain.v1.WalletService/CreateSidechainProposal
+
+# Inspect the status of the proposal. Once it reaches 5 votes, it gets activated!
+# Note that this number is going to be much higher on mainnet.
+$ buf curl --emit-defaults --protocol grpc \
+    --http2-prior-knowledge \
+    http://localhost:50051/cusf.mainchain.v1.ValidatorService/GetSidechainProposals
+
+# Once the sidechain is activated, it disappears from GetSidechainProposals. You
+# can view it through the GetSidechains endpoint
+$ buf curl --emit-defaults --protocol grpc \
+    --http2-prior-knowledge \
+    http://localhost:50051/cusf.mainchain.v1.ValidatorService/GetSidechains
+```
