@@ -3,7 +3,15 @@ name: signet-server
 services:
   mainchain:
     healthcheck:
-     test: ["CMD", "drivechain-cli", "-rpcuser=user", "-rpcpassword=password", "-signet", "getblockchaininfo"]
+      test:
+        [
+          "CMD",
+          "drivechain-cli",
+          "-rpcuser=user",
+          "-rpcpassword=password",
+          "-signet",
+          "getblockchaininfo",
+        ]
 
     image: ghcr.io/layertwo-labs/bitcoin-patched:sha-32e384a
     # map the named volume to the data directory
@@ -29,20 +37,26 @@ services:
       - -zmqpubsequence=tcp://0.0.0.0:29000
       - -rest
 
-  enforcer: 
+  enforcer:
     image: ghcr.io/layertwo-labs/bip300301_enforcer:sha-ae376cb
     pull_policy: always
     restart: unless-stopped
     # Adjust these lines to adjust the RUST_LOG (or any other!) env var
-    environment: 
+    environment:
       RUST_LOG: trace,h2=info,hyper_util=info
       RUST_BACKTRACE: 1
 
     healthcheck:
-       test: ["CMD", "grpc_health_probe", "-service=cusf.mainchain.v1.ValidatorService", "-addr=localhost:50051"]
+      test:
+        [
+          "CMD",
+          "grpc_health_probe",
+          "-service=cusf.mainchain.v1.ValidatorService",
+          "-addr=localhost:50051",
+        ]
 
     volumes: [enforcer-data:/root/.local/share/bip300301_enforcer]
-    ports: 
+    ports:
       - "127.0.0.1:50051:50051" # gRPC, only available from host machine
       - "127.0.0.1:8122:8122" # JSON-RPC, only available from host machine
 
@@ -102,59 +116,66 @@ services:
       - --log-level=trace
       - --mainchain-grpc-host=0.0.0.0
       - --mainchain-grpc-port=50051
-       # For Thunder to be reachable from other containers (via host-gateway) , 
-       # we need to bind to 0.0.0.0. This means that the host machine needs to 
-       # make sure to /not/ expose this to the open internet!
+        # For Thunder to be reachable from other containers (via host-gateway) ,
+        # we need to bind to 0.0.0.0. This means that the host machine needs to
+        # make sure to /not/ expose this to the open internet!
       - --rpc-addr=0.0.0.0:6002
 
   # TODO: must make the seed work... Either:
   # --mnemonic-seed-phrase-path and a file path
-  # or a RPC 
+  # or a RPC
   thunder:
-    # Cannot get UDP to play well with Docker. Unable to connect external 
-    # nodes to this one through the open internet. Works when running with 
-    # host mode!
-    network_mode: host 
-    healthcheck:
-      test: ["CMD", "thunder_app_cli", "--rpc-url=http://127.0.0.0:6009", "balance"]
-    image: ghcr.io/layertwo-labs/thunder:sha-ccc9260
-    restart: unless-stopped
-    volumes: 
-      - thunder-data:/root/.local/share/thunder
-      - logs-data:/logs
-    # As long as we're running the container using the `host` network mode, 
-    # these are discarded. 
-    # ports: 
-    #  - "4009:4009/udp" # P2P, exposed to the internet, over UDP
-    #  - "127.0.0.1:6009:6009" # RPC, only available from host machine
-
-    entrypoint: 
-       - thunder_app
-       - --headless
-       - --mainchain-grpc-url=http://localhost:50051
-       # For Thunder to be reachable from other containers (via host-gateway) , 
-       # we need to bind to 0.0.0.0. This means that the host machine needs to 
-       # make sure to /not/ expose this to the open internet!
-       - --rpc-addr=0.0.0.0:6009
-       - --log-level=trace
-       - --log-level-file=trace
-       - --log-dir=/logs/thunder
-  
-  zside: 
-    image: ghcr.io/iwakura-rein/thunder-orchard:sha-e13b1db
-    restart: unless-stopped
-    # Cannot get UDP to play well with Docker. Unable to connect external 
-    # nodes to this one through the open internet. Works when running with 
+    # Cannot get UDP to play well with Docker. Unable to connect external
+    # nodes to this one through the open internet. Works when running with
     # host mode!
     network_mode: host
     healthcheck:
-      test: ["CMD", "thunder_orchard_app_cli", "--rpc-url=http://127.0.0.0:6098", "balance"]
+      test:
+        ["CMD", "thunder_app_cli", "--rpc-url=http://127.0.0.0:6009", "balance"]
+    image: ghcr.io/layertwo-labs/thunder:sha-ccc9260
+    restart: unless-stopped
+    volumes:
+      - thunder-data:/root/.local/share/thunder
+      - logs-data:/logs
+    # As long as we're running the container using the `host` network mode,
+    # these are discarded.
+    # ports:
+    #  - "4009:4009/udp" # P2P, exposed to the internet, over UDP
+    #  - "127.0.0.1:6009:6009" # RPC, only available from host machine
+
+    entrypoint:
+      - thunder_app
+      - --headless
+      - --mainchain-grpc-url=http://localhost:50051
+      # For Thunder to be reachable from other containers (via host-gateway) ,
+      # we need to bind to 0.0.0.0. This means that the host machine needs to
+      # make sure to /not/ expose this to the open internet!
+      - --rpc-addr=0.0.0.0:6009
+      - --log-level=trace
+      - --log-level-file=trace
+      - --log-dir=/logs/thunder
+
+  zside:
+    image: ghcr.io/iwakura-rein/thunder-orchard:sha-e13b1db
+    restart: unless-stopped
+    # Cannot get UDP to play well with Docker. Unable to connect external
+    # nodes to this one through the open internet. Works when running with
+    # host mode!
+    network_mode: host
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "thunder_orchard_app_cli",
+          "--rpc-url=http://127.0.0.0:6098",
+          "balance",
+        ]
     # TODO: adjust this once we can move away from network_mode: host
     # ports: [4098:4098/udp] # P2P
-    volumes: 
+    volumes:
       - zside-data:/root/.local/share/thunder-orchard
       - logs-data:/logs
-    command: 
+    command:
       - --headless
       - --mainchain-grpc-url=http://localhost:50051
       - --rpc-addr=0.0.0.0:6098
@@ -194,8 +215,9 @@ services:
     image: mempool/frontend:v3.2.1
     restart: unless-stopped
     stop_grace_period: 1m
-    command: "./wait-for mempool-db:3306 --timeout=720 -- nginx -g 'daemon off;'"
-    ports: 
+    command:
+      "./wait-for mempool-db:3306 --timeout=720 -- nginx -g 'daemon off;'"
+    ports:
       - 8080:8080 # should be reachable externally
 
   mempool-api:
@@ -226,7 +248,8 @@ services:
     stop_grace_period: 1m
     healthcheck:
       test: ["CMD", "curl", "--fail", "localhost:8999/api/v1/backend-info"]
-    command: "./wait-for-it.sh mempool-db:3306 --timeout=720 --strict -- ./start.sh"
+    command:
+      "./wait-for-it.sh mempool-db:3306 --timeout=720 --strict -- ./start.sh"
     volumes: [mempool-api-data:/backend/cache]
 
   # TODO: how do we enable SSL here?
@@ -258,8 +281,8 @@ services:
       - --electrum-rpc-addr=0.0.0.0:50001
       - --electrum-txs-limit=30000
       - --cors=*
-  
-  fast-withdraw-server: 
+
+  fast-withdraw-server:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
@@ -269,31 +292,41 @@ services:
       BITCOIN_RPC_URL: http://mainchain:38332
       THUNDER_RPC_URL: http://host.docker.internal:6009
       BITNAMES_RPC_URL: http://host.docker.internal:6002
-      PORT: 3333 
+      PORT: 3333
       HOST: 0.0.0.0
 
     ports:
       - 127.0.0.1:3333:3333
 
     image: ghcr.io/layertwo-labs/fast-withdraw-server:sha-b1379c4
-  
+
   faucet-backend:
     restart: unless-stopped
     # Find image-tags here: https://github.com/LayerTwo-Labs/faucet-backend/pkgs/container/faucet-backend
-    image: ghcr.io/layertwo-labs/faucet-backend:sha-5a04328
+    image: ghcr.io/layertwo-labs/faucet-backend:sha-4fd87f4
     pull_policy: always
-    healthcheck: 
-      test: ["CMD", "curl", "--fail", "-H", "Content-Type: application/json", "-X", "POST", "localhost:8082/faucet.v1.FaucetService/ListClaims"]
-    ports: 
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "--fail",
+          "-H",
+          "Content-Type: application/json",
+          "-X",
+          "POST",
+          "localhost:8082/faucet.v1.FaucetService/ListClaims",
+        ]
+    ports:
       - 8082:8082
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    command: 
+    command:
       - faucetd
       - --bitcoincore.address=mainchain:38332
       - --bitcoincore.rpcuser=user
       - --bitcoincore.rpcpassword=password
-      - --enforcer.host=enforcer
+      - --enforcer.host=enforcer:50051
       - --bitnames.url=http://host.docker.internal:6002
       - --bitassets.url=http://host.docker.internal:6004
       - --thunder.url=http://host.docker.internal:6009
@@ -301,21 +334,21 @@ services:
       - --listen=0.0.0.0:8082
 
   faucet-frontend:
-    ports: 
+    ports:
       - 8081:80
     pull_policy: always
     # Find image-tags here: https://github.com/LayerTwo-Labs/faucet-frontend/pkgs/container/faucet-frontend
-    image: ghcr.io/layertwo-labs/faucet-frontend:sha-5fe2737
+    image: ghcr.io/layertwo-labs/faucet-frontend:sha-4fd87f4
 
-  # Can be used to run a container with the same volumes as the other services. 
+  # Can be used to run a container with the same volumes as the other services.
   # $ docker compose run --rm busybox sh
 
-  # Todays Thunder logs: 
+  # Todays Thunder logs:
   #   $ docker compose run --rm busybox cat /logs/thunder/$(date +%Y-%m-%d).log | lnav
   busybox:
     profiles: [cli]
     image: busybox
-    volumes: 
+    volumes:
       - mainchain-data:/mainchain-data
       - enforcer-data:/enforcer-data
       - thunder-data:/thunder-data
@@ -323,11 +356,11 @@ services:
       - logs-data:/logs
 
   buf:
-    # Assign this to a special profile, so that `docker compose up` doesn't execute it. 
+    # Assign this to a special profile, so that `docker compose up` doesn't execute it.
     profiles: [cli]
     image: bufbuild/buf
-  
-volumes: 
+
+volumes:
   mainchain-data:
   enforcer-data:
   thunder-data:
