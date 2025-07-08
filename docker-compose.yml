@@ -141,7 +141,7 @@ services:
        - --log-dir=/logs/thunder
   
   zside: 
-    image: ghcr.io/iwakura-rein/thunder-orchard:sha-e13b1db
+    image: ghcr.io/iwakura-rein/thunder-orchard:sha-41d0fe0
     restart: unless-stopped
     # Cannot get UDP to play well with Docker. Unable to connect external 
     # nodes to this one through the open internet. Works when running with 
@@ -305,7 +305,7 @@ services:
       - 8081:80
     pull_policy: always
     # Find image-tags here: https://github.com/LayerTwo-Labs/faucet-frontend/pkgs/container/faucet-frontend
-    image: ghcr.io/layertwo-labs/faucet-frontend:sha-5fe2737
+    image: ghcr.io/layertwo-labs/faucet-frontend:sha-cefc59e
 
   # Can be used to run a container with the same volumes as the other services. 
   # $ docker compose run --rm busybox sh
