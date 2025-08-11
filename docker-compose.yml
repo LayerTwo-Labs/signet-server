@@ -141,7 +141,7 @@ services:
        - --log-dir=/logs/thunder
   
   zside: 
-    image: ghcr.io/iwakura-rein/thunder-orchard:sha-7d95cc4
+    image: ghcr.io/iwakura-rein/thunder-orchard:sha-29b97c9
     restart: unless-stopped
     # Cannot get UDP to play well with Docker. Unable to connect external 
     # nodes to this one through the open internet. Works when running with 
