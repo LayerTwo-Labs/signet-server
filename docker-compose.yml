@@ -30,7 +30,7 @@ services:
       - -rest
 
   enforcer: 
-    image: ghcr.io/layertwo-labs/bip300301_enforcer:sha-ae376cb
+    image: ghcr.io/layertwo-labs/bip300301_enforcer:sha-351b193
     pull_policy: always
     restart: unless-stopped
     # Adjust these lines to adjust the RUST_LOG (or any other!) env var
