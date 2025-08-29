@@ -117,7 +117,7 @@ services:
     network_mode: host 
     healthcheck:
       test: ["CMD", "thunder_app_cli", "--rpc-url=http://127.0.0.0:6009", "balance"]
-    image: ghcr.io/layertwo-labs/thunder:sha-ccc9260
+    image: ghcr.io/layertwo-labs/thunder:sha-18d18db
     restart: unless-stopped
     volumes: 
       - thunder-data:/root/.local/share/thunder
