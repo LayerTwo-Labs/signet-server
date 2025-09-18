@@ -30,7 +30,7 @@ services:
       - -rest
 
   enforcer: 
-    image: ghcr.io/layertwo-labs/bip300301_enforcer:sha-351b193
+    image: ghcr.io/layertwo-labs/bip300301_enforcer:sha-7604e13
     pull_policy: always
     restart: unless-stopped
     # Adjust these lines to adjust the RUST_LOG (or any other!) env var
@@ -280,7 +280,7 @@ services:
   faucet-backend:
     restart: unless-stopped
     # Find image-tags here: https://github.com/LayerTwo-Labs/faucet-backend/pkgs/container/faucet-backend
-    image: ghcr.io/layertwo-labs/faucet-backend:sha-5a04328
+    image: ghcr.io/layertwo-labs/faucet-backend:sha-dd5d76c
     pull_policy: always
     healthcheck: 
       test: ["CMD", "curl", "--fail", "-H", "Content-Type: application/json", "-X", "POST", "localhost:8082/faucet.v1.FaucetService/ListClaims"]
@@ -305,7 +305,7 @@ services:
       - 8081:80
     pull_policy: always
     # Find image-tags here: https://github.com/LayerTwo-Labs/faucet-frontend/pkgs/container/faucet-frontend
-    image: ghcr.io/layertwo-labs/faucet-frontend:sha-cefc59e
+    image: ghcr.io/layertwo-labs/faucet-frontend:sha-dd5d76c
 
   # Can be used to run a container with the same volumes as the other services. 
   # $ docker compose run --rm busybox sh
@@ -324,6 +324,10 @@ services:
 
   buf:
     # Assign this to a special profile, so that `docker compose up` doesn't execute it. 
+    #
+    # Usage: 
+    #   $ docker compose run --rm buf curl --emit-defaults --protocol grpc --http2-prior-knowledge --list-methods http://enforcer:50051
+    #   $ docker compose run --rm buf curl --emit-defaults --protocol grpc --http2-prior-knowledge http://enforcer:50051/cusf.mainchain.v1.ValidatorService/GetChainTip
     profiles: [cli]
     image: bufbuild/buf
   
