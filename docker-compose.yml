@@ -86,7 +86,7 @@ services:
       - --rpc-port=6004
 
   bitnames:
-    image: ghcr.io/layertwo-labs/bitnames:sha-1864e8d
+    image: ghcr.io/layertwo-labs/bitnames:sha-3b26b94
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "plain_bitnames_app_cli", "balance"]
