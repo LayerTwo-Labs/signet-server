@@ -64,7 +64,7 @@ services:
       - --signet-miner-coinbase-recipient=tb1qduth40j5r3v3rjxfd0qefpnldqzpt00anf8ajl
 
   bitassets:
-    image: ghcr.io/layertwo-labs/bitassets:sha-cf8df59
+    image: ghcr.io/layertwo-labs/bitassets:sha-989ba91
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "plain_bitassets_app_cli", "balance"]
