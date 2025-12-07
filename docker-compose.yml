@@ -301,11 +301,11 @@ services:
       - --listen=0.0.0.0:8082
 
   faucet-frontend:
-    ports: 
-      - 8081:80
+    ports:
+      - 3003:3003
     pull_policy: always
     # Find image-tags here: https://github.com/LayerTwo-Labs/faucet-frontend/pkgs/container/faucet-frontend
-    image: ghcr.io/layertwo-labs/faucet-frontend:sha-dd5d76c
+    image: ghcr.io/layertwo-labs/faucet-frontend-signet:pr-1373
 
   # Can be used to run a container with the same volumes as the other services. 
   # $ docker compose run --rm busybox sh
