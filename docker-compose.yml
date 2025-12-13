@@ -280,7 +280,7 @@ services:
   faucet-backend:
     restart: unless-stopped
     # Find image-tags here: https://github.com/LayerTwo-Labs/faucet-backend/pkgs/container/faucet-backend
-    image: ghcr.io/layertwo-labs/faucet-backend:sha-dd5d76c
+    image: ghcr.io/layertwo-labs/faucet-backend:sha-776a9a9
     pull_policy: always
     healthcheck: 
       test: ["CMD", "curl", "--fail", "-H", "Content-Type: application/json", "-X", "POST", "localhost:8082/faucet.v1.FaucetService/ListClaims"]
@@ -293,7 +293,7 @@ services:
       - --bitcoincore.address=mainchain:38332
       - --bitcoincore.rpcuser=user
       - --bitcoincore.rpcpassword=password
-      - --enforcer.host=enforcer
+      - --enforcer.url=http://enforcer:50051
       - --bitnames.url=http://host.docker.internal:6002
       - --bitassets.url=http://host.docker.internal:6004
       - --thunder.url=http://host.docker.internal:6009
@@ -303,9 +303,12 @@ services:
   faucet-frontend:
     ports:
       - 3003:3003
+    environment: 
+      API_BASE_URL: https://node.drivechain.info/api
+      METADATA_BASE_URL: https://node.drivechain.info
     pull_policy: always
     # Find image-tags here: https://github.com/LayerTwo-Labs/faucet-frontend/pkgs/container/faucet-frontend
-    image: ghcr.io/layertwo-labs/faucet-frontend-signet:pr-1373
+    image: ghcr.io/layertwo-labs/faucet-frontend-signet:sha-776a9a9
 
   # Can be used to run a container with the same volumes as the other services. 
   # $ docker compose run --rm busybox sh
