@@ -1,0 +1,110 @@
+name: forknet-server
+  
+services: 
+  enforcer:   
+    profiles:
+      - forknet
+    ports:
+      - "127.0.0.1:8123:8123" # JSON-RPC, only available from host machine
+
+    secrets:
+      - source: bitcoind-forknet-cookie
+        target: /daemon-dir/.cookie
+
+    command: 
+      - --log-format=json
+      - --log-level=debug
+      - --node-rpc-addr=host.docker.internal:18301
+      - --node-rpc-cookie-path=/daemon-dir/.cookie
+      - --serve-grpc-addr=0.0.0.0:50051 # Expose over 0.0.0.0 so that other services can connect to it
+      - --serve-rpc-addr=0.0.0.0:8123 # Expose over 0.0.0.0 so that other services can connect to it
+      - --node-zmq-addr-sequence=tcp://host.docker.internal:29000
+
+  mempool-db:
+    profiles:
+      - forknet
+  
+  mempool-web: 
+    profiles:
+      - forknet
+
+  mempool-api:
+    profiles:
+      - forknet
+    secrets:
+      - source: bitcoind-forknet-cookie
+        target: /daemon-dir/.cookie
+
+    environment:
+      MEMPOOL_NETWORK: mainnet
+      CORE_RPC_HOST: host.docker.internal
+      CORE_RPC_PORT: 18301
+      CORE_RPC_USERNAME: ''
+      CORE_RPC_PASSWORD: ''
+      CORE_RPC_COOKIE: "true"
+      CORE_RPC_COOKIE_PATH: "/daemon-dir/.cookie"
+
+  electrs:
+    profiles:
+      - forknet
+    volumes: 
+      # Mount this into something different from the baseline 
+      # Compose file, otherwise we'll overwrite our own mount
+      - electrs-forknet-data:/forknet
+    secrets: 
+      - source: bitcoind-forknet-cookie
+        target: /daemon-dir/.cookie
+
+    command:
+      - -vv # pretty verbose logging
+      - --timestamp
+      - --daemon-rpc-addr=host.docker.internal:18301
+      - --jsonrpc-import
+      - --db-dir=/forknet/db
+      - --daemon-dir=/daemon-dir
+      - --network=mainnet
+      - --http-addr=0.0.0.0:3000
+      - --electrum-rpc-addr=0.0.0.0:50001
+      - --electrum-txs-limit=30000
+      - --cors=*
+  
+  faucet-backend: 
+    profiles:
+      - forknet
+    secrets:
+      - source: bitcoind-forknet-cookie
+        target: /cookie
+    command:
+      - faucetd
+      - --bitcoincore.address=host.docker.internal:18301
+      - --bitcoincore.cookie=/cookie
+      - --enforcer.url=http://enforcer:50051
+      - --listen=0.0.0.0:8082
+    
+  faucet-frontend:
+    profiles:
+      - forknet
+    environment: 
+      API_BASE_URL: http://faucet-backend:8082
+      METADATA_BASE_URL: https://node.forknet.drivechain.info
+  
+  busybox: 
+    volumes: 
+      - electrs-forknet-data:/electrs-forknet-data
+
+# Paths to secrets refer to the (remote) host machine. 
+secrets: 
+  # IMPORTANT: this needs to be a file WITHOUT a trailing newline
+  bitcoind-forknet-cookie: 
+    file: /data/secrets/bitcoind-forknet-cookie.txt
+
+volumes:
+  # Paths in volume mounts work poorly with remote Docker contexts.
+  # We therefore specify an external volume. This can be created with 
+  # the following command on the machine hosting the Docker context:
+  # $ docker volume create \
+  #  --driver local --opt type=none \
+  #  --opt o=bind --opt device=/data/electrs \
+  #  electrs-forknet-data 
+  electrs-forknet-data:
+    external: true
