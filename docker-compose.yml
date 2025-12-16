@@ -285,7 +285,7 @@ services:
   faucet-backend:
     restart: unless-stopped
     # Find image-tags here: https://github.com/LayerTwo-Labs/faucet-backend/pkgs/container/faucet-backend
-    image: ghcr.io/layertwo-labs/faucet-backend:sha-776a9a9
+    image: ghcr.io/layertwo-labs/faucet-backend:sha-d947517
     pull_policy: always
     healthcheck: 
       test: ["CMD", "curl", "--fail", "-H", "Content-Type: application/json", "-X", "POST", "localhost:8082/faucet.v1.FaucetService/ListClaims"]
@@ -320,7 +320,7 @@ services:
     # Find image-tags here: 
     #   Signet: https://github.com/LayerTwo-Labs/faucet-frontend-signet-server/pkgs/container/faucet-frontend
     #   Forknet: https://github.com/LayerTwo-Labs/faucet-frontend-forknet-server/pkgs/container/faucet-frontend
-    image: ghcr.io/layertwo-labs/faucet-frontend-${COMPOSE_PROJECT_NAME}:pr-1399
+    image: ghcr.io/layertwo-labs/faucet-frontend-${COMPOSE_PROJECT_NAME}:sha-d947517
 
   # Can be used to run a container with the same volumes as the other services. 
   # $ docker compose run --rm busybox sh
