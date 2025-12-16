@@ -1,3 +1,9 @@
+compose-forknet *args="":
+    docker --context l2l-forknet compose \
+        --profile forknet \
+        -f docker-compose.yml \
+        -f docker-compose.forknet.yml {{ args }}
+
 get-latest-image service:
     #! /usr/bin/env bash
     if ! which uv > /dev/null; then

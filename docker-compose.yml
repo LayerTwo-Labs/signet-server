@@ -30,13 +30,14 @@ services:
       - -rest
 
   enforcer: 
-    image: ghcr.io/layertwo-labs/bip300301_enforcer:sha-7604e13
+    image: ghcr.io/layertwo-labs/bip300301_enforcer:sha-65ebb34
     pull_policy: always
     restart: unless-stopped
-    # Adjust these lines to adjust the RUST_LOG (or any other!) env var
     environment: 
-      RUST_LOG: trace,h2=info,hyper_util=info
+      RUST_LOG: debug,h2=info,hyper_util=info
       RUST_BACKTRACE: 1
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
     healthcheck:
        test: ["CMD", "grpc_health_probe", "-service=cusf.mainchain.v1.ValidatorService", "-addr=localhost:50051"]
@@ -199,6 +200,8 @@ services:
       - 8080:8080 # should be reachable externally
 
   mempool-api:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on: [mempool-db]
 
     # conf: https://github.com/mempool/mempool/blob/e3c3f31ddbf9543db12ef4f7e5032566757d31f9/backend/mempool-config.sample.json#
@@ -232,11 +235,13 @@ services:
   # TODO: how do we enable SSL here?
   electrs:
     image: mempool/electrs
-    # TODO: find something that works here with what's installed on the box
-    # healthcheck:
-    #  test: ["CMD", "curl", "--fail", "http://localhost:3000/blocks/tip/hash"]
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:3000/blocks/tip/height"]
     environment:
       RUST_BACKTRACE: 1
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
     restart: unless-stopped
     ports:
@@ -307,8 +312,15 @@ services:
       API_BASE_URL: https://node.drivechain.info/api
       METADATA_BASE_URL: https://node.drivechain.info
     pull_policy: always
-    # Find image-tags here: https://github.com/LayerTwo-Labs/faucet-frontend/pkgs/container/faucet-frontend
-    image: ghcr.io/layertwo-labs/faucet-frontend-signet:sha-776a9a9
+    # We want to avoid specifying tags for both signet and forknet by themselves, so we
+    # try to be a bit clever here. Perhaps too clever? Anyways: COMPOSE_PROJECT_NAME can 
+    # interpolated into the image name, and this is automatically set when running. This 
+    # means that we don't have to provide a .env file, or specify an env var on the 
+    # command line. 
+    # Find image-tags here: 
+    #   Signet: https://github.com/LayerTwo-Labs/faucet-frontend-signet-server/pkgs/container/faucet-frontend
+    #   Forknet: https://github.com/LayerTwo-Labs/faucet-frontend-forknet-server/pkgs/container/faucet-frontend
+    image: ghcr.io/layertwo-labs/faucet-frontend-${COMPOSE_PROJECT_NAME}:pr-1399
 
   # Can be used to run a container with the same volumes as the other services. 
   # $ docker compose run --rm busybox sh
