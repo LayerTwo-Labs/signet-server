@@ -19,6 +19,9 @@ services:
       - --serve-grpc-addr=0.0.0.0:50051 # Expose over 0.0.0.0 so that other services can connect to it
       - --serve-rpc-addr=0.0.0.0:8123 # Expose over 0.0.0.0 so that other services can connect to it
       - --node-zmq-addr-sequence=tcp://host.docker.internal:29000
+      - --enable-wallet
+      - --wallet-auto-create
+      - --wallet-skip-periodic-sync
 
   mempool-db:
     profiles:
