@@ -47,6 +47,36 @@ services:
       CORE_RPC_COOKIE: "true"
       CORE_RPC_COOKIE_PATH: "/daemon-dir/.cookie"
 
+  # The other electrs instance we have running is mempool/electrs, not romanz/electrs. 
+  # The first is a fork of a fork of the original romanz/electrs implementation. It 
+  # turns out that BlueWallet doesn't work with mempool/electrs. We therefore run two 
+  # instances! mempool/electrs is used for the block explorer, and romanz/electrs is 
+  # used for BlueWallet. The resource requirements for romanz/electrs are much lower, 
+  # only a few dozen gigs of storage.  
+  romanzelectrs:
+    build: https://github.com/romanz/electrs.git#66b1de65c0afffff19ea97be9b872e488e4d6778
+    profiles:
+      - forknet
+    secrets: 
+      - source: bitcoind-forknet-cookie
+        target: /daemon-dir/.cookie
+    # network_mode: host # network issues with P2P protocol?
+    volumes:
+      - romanz-electrs-forknet-data:/app
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    restart: unless-stopped
+    ports:
+      - 50001:50001 # Electrum port
+    command:
+      - electrs
+      - --db-dir=/app/db
+      - --cookie-file=/daemon-dir/.cookie
+      - --daemon-rpc-addr=host.docker.internal:18301
+      - --daemon-p2p-addr=host.docker.internal:8300
+      - --electrum-rpc-addr=0.0.0.0:50001
+      - --log-filters=info
+      - --magic=62333030 
+
   electrs:
     profiles:
       - forknet
@@ -103,11 +133,13 @@ secrets:
 
 volumes:
   # Paths in volume mounts work poorly with remote Docker contexts.
-  # We therefore specify an external volume. This can be created with 
+  # We therefore specify external volumes. These can be created with 
   # the following command on the machine hosting the Docker context:
   # $ docker volume create \
   #  --driver local --opt type=none \
   #  --opt o=bind --opt device=/data/electrs \
   #  electrs-forknet-data 
   electrs-forknet-data:
+    external: true
+  romanz-electrs-forknet-data:
     external: true

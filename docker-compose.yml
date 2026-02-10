@@ -243,8 +243,10 @@ services:
       - "host.docker.internal:host-gateway"
 
     restart: unless-stopped
+    # The Electrum port is left out here because we instead want to expose the 
+    # 50001 port from the romanzelectrs service.
     ports:
-      - 50001:50001 # Electrum port!
+      # - 50001:50001 # Electrum port!
       - 3000:3000 # Esplora REST API
 
     volumes: [electrs-data:/app/db]
