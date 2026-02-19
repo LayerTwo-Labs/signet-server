@@ -10,8 +10,8 @@ services:
     volumes: [mainchain-data:/home/drivechain/.drivechain-20260205]
     restart: unless-stopped
     ports:
-      - "38343:38343" # P2P, exposed to the internet
-      - "127.0.0.1:38342:38342" # RPC, only available from host machine
+      - "38333:38333" # P2P, exposed to the internet
+      - "127.0.0.1:38332:38332" # RPC, only available from host machine
     command:
       - drivechaind
       - -rpcuser=user
@@ -22,12 +22,12 @@ services:
       - -signetchallenge=a91484fa7c2460891fe5212cb08432e21a4207909aa987
       - -acceptnonstdtxn
       - -listen
-      - -port=38343
-      - -rpcbind=0.0.0.0:38342
+      - -port=38333
+      - -rpcbind=0.0.0.0:38332
       - -rpcallowip=0.0.0.0/0
       - -txindex
       - -fallbackfee=0.00021
-      - -zmqpubsequence=tcp://0.0.0.0:29010
+      - -zmqpubsequence=tcp://0.0.0.0:29000
       - -rest
 
   enforcer: 
@@ -41,32 +41,32 @@ services:
       - "host.docker.internal:host-gateway"
 
     healthcheck:
-       test: ["CMD", "grpc_health_probe", "-service=cusf.mainchain.v1.ValidatorService", "-addr=localhost:50061"]
+       test: ["CMD", "grpc_health_probe", "-service=cusf.mainchain.v1.ValidatorService", "-addr=localhost:50051"]
 
-    volumes: [enforcer-data:/root/.local/share/bip300301_enforcer_20260205]
+    volumes: [enforcer-data:/root/.local/share/bip300301_enforcer]
     ports: 
-      - "127.0.0.1:50061:50061" # gRPC, only available from host machine
-      - "127.0.0.1:8132:8132" # JSON-RPC, only available from host machine
+      - "127.0.0.1:50051:50051" # gRPC, only available from host machine
+      - "127.0.0.1:8122:8122" # JSON-RPC, only available from host machine
 
     command:
       - --log-format=json
       - --log-level=trace
-      - --node-rpc-addr=mainchain:38342
+      - --node-rpc-addr=mainchain:38332
       - --node-rpc-user=user
       - --node-rpc-pass=password
-      - --serve-grpc-addr=0.0.0.0:50061 # Expose over 0.0.0.0 so that other services can connect to it
-      - --serve-rpc-addr=0.0.0.0:8132 # Expose over 0.0.0.0 so that other services can connect to it
-      - --node-zmq-addr-sequence=tcp://mainchain:29010
+      - --serve-grpc-addr=0.0.0.0:50051 # Expose over 0.0.0.0 so that other services can connect to it
+      - --serve-rpc-addr=0.0.0.0:8122 # Expose over 0.0.0.0 so that other services can connect to it
+      - --node-zmq-addr-sequence=tcp://mainchain:29000
       - --enable-wallet
       - --enable-mempool
       - --wallet-auto-create
       - --wallet-skip-periodic-sync
       - --wallet-electrum-host=electrs
-      - --wallet-electrum-port=50011
+      - --wallet-electrum-port=50001
       - --wallet-sync-source=electrum
-      - --wallet-esplora-url=http://127.0.0.1:3010
+      - --wallet-esplora-url=http://127.0.0.1:3000
       # mainchain Bitcoin Core address
-      - --signet-miner-coinbase-recipient=tb1qxca3sucvjs5wvhjp7jzegemspavulecf6sv0yh
+      - --signet-miner-coinbase-recipient=tb1qk7mulv65rucuk3addsk04dkj3vkyf7h6l5k6r4
 
   bitassets:
     image: ghcr.io/layertwo-labs/bitassets:sha-8f8a627
@@ -84,14 +84,14 @@ services:
       - --headless
       - --log-level=trace
       - --mainchain-grpc-host=0.0.0.0
-      - --mainchain-grpc-port=50061
+      - --mainchain-grpc-port=50051
       # For BitAssets to be reachable from other containers (via host-gateway) ,
       # we need to bind to 0.0.0.0. This means that the host machine needs to
       # make sure to /not/ expose this to the open internet!
-      - --net-addr=0.0.0.0:5004
+      - --net-addr=0.0.0.0:4004
       - --rpc-host=0.0.0.0
-      - --rpc-port=7004
-      - --zmq-addr=0.0.0.0:29004
+      - --rpc-port=6004
+      - --zmq-addr=0.0.0.0:28004
 
   bitnames:
     image: ghcr.io/layertwo-labs/bitnames:sha-3108710
@@ -109,13 +109,13 @@ services:
       - --headless
       - --log-level=trace
       - --mainchain-grpc-host=127.0.0.1
-      - --mainchain-grpc-port=50061
+      - --mainchain-grpc-port=50051
        # For Thunder to be reachable from other containers (via host-gateway) , 
        # we need to bind to 0.0.0.0. This means that the host machine needs to 
        # make sure to /not/ expose this to the open internet!
-      - --net-addr=0.0.0.0:5002
-      - --rpc-addr=0.0.0.0:7002
-      - --zmq-addr=0.0.0.0:29002
+      - --net-addr=0.0.0.0:4002
+      - --rpc-addr=0.0.0.0:6002
+      - --zmq-addr=0.0.0.0:28002
 
   # TODO: must make the seed work... Either:
   # --mnemonic-seed-phrase-path and a file path
@@ -126,7 +126,7 @@ services:
     # host mode!
     network_mode: host 
     healthcheck:
-      test: ["CMD", "thunder_app_cli", "--rpc-url=http://127.0.0.0:7009", "balance"]
+      test: ["CMD", "thunder_app_cli", "--rpc-url=http://127.0.0.1:6009", "balance"]
     image: ghcr.io/layertwo-labs/thunder:sha-fd42347
     restart: unless-stopped
     volumes: 
@@ -141,12 +141,12 @@ services:
     entrypoint: 
        - thunder_app
        - --headless
-       - --mainchain-grpc-url=http://localhost:50061
+       - --mainchain-grpc-url=http://localhost:50051
        # For Thunder to be reachable from other containers (via host-gateway) , 
        # we need to bind to 0.0.0.0. This means that the host machine needs to 
        # make sure to /not/ expose this to the open internet!
-       - --net-addr=0.0.0.0:5009
-       - --rpc-addr=0.0.0.0:7009
+       - --net-addr=0.0.0.0:4009
+       - --rpc-addr=0.0.0.0:6009
        - --log-level=trace
        - --log-level-file=trace
        - --log-dir=/logs/thunder
@@ -195,21 +195,19 @@ services:
     restart: unless-stopped
     stop_grace_period: 1m
     volumes: [mysql-data:/var/lib/mysql]
-    ports:
-      - 127.0.0.1:3316:3306
 
   mempool-web:
     environment:
-      FRONTEND_HTTP_PORT: 8090
+      FRONTEND_HTTP_PORT: 8080
       BACKEND_MAINNET_HTTP_HOST: mempool-api
     healthcheck:
-      test: ["CMD", "curl", "--fail", "http://localhost:8090"]
+      test: ["CMD", "curl", "--fail", "http://localhost:8080"]
     image: mempool/frontend:v3.2.1
     restart: unless-stopped
     stop_grace_period: 1m
     command: "./wait-for mempool-db:3306 --timeout=720 -- nginx -g 'daemon off;'"
     ports: 
-      - 8090:8090 # should be reachable externally
+      - 8080:8080 # should be reachable externally
 
   mempool-api:
     extra_hosts:
@@ -218,14 +216,14 @@ services:
 
     # conf: https://github.com/mempool/mempool/blob/e3c3f31ddbf9543db12ef4f7e5032566757d31f9/backend/mempool-config.sample.json#
     environment:
-      MEMPOOL_HTTP_PORT: 9999
+      MEMPOOL_HTTP_PORT: 8999
       MEMPOOL_NETWORK: signet
       MEMPOOL_BACKEND: "electrum"
       ELECTRUM_HOST: electrs
-      ELECTRUM_PORT: 50011
+      ELECTRUM_PORT: 50001
       ELECTRUM_TLS_ENABLED: "false"
       CORE_RPC_HOST: mainchain
-      CORE_RPC_PORT: 38342
+      CORE_RPC_PORT: 38332
       CORE_RPC_USERNAME: user
       CORE_RPC_PASSWORD: password
       DATABASE_ENABLED: "true"
@@ -241,7 +239,7 @@ services:
     restart: unless-stopped
     stop_grace_period: 1m
     healthcheck:
-      test: ["CMD", "curl", "--fail", "localhost:9999/api/v1/backend-info"]
+      test: ["CMD", "curl", "--fail", "localhost:8999/api/v1/backend-info"]
     command: "./wait-for-it.sh mempool-db:3306 --timeout=720 --strict -- ./start.sh"
     volumes: [mempool-api-data:/backend/cache]
 
@@ -249,7 +247,7 @@ services:
   electrs:
     image: mempool/electrs
     healthcheck:
-      test: ["CMD", "curl", "--fail", "http://localhost:3010/blocks/tip/height"]
+      test: ["CMD", "curl", "--fail", "http://localhost:3000/blocks/tip/height"]
     environment:
       RUST_BACKTRACE: 1
 
@@ -258,8 +256,8 @@ services:
 
     restart: unless-stopped
     ports:
-      - 50011:50011 # Electrum port!
-      - 3010:3010 # Esplora REST API
+      - 50001:50001 # Electrum port!
+      - 3000:3000 # Esplora REST API
 
     volumes: [electrs-data:/app/db]
 
@@ -268,13 +266,13 @@ services:
       - -vvv # pretty verbose logging
       - --timestamp
       - --cookie=user:password
-      - --daemon-rpc-addr=mainchain:38342
+      - --daemon-rpc-addr=mainchain:38332
       - --jsonrpc-import
       - --db-dir=/app/db
       - --network=signet
       - --magic=e409e968
-      - --http-addr=0.0.0.0:3010
-      - --electrum-rpc-addr=0.0.0.0:50011
+      - --http-addr=0.0.0.0:3000
+      - --electrum-rpc-addr=0.0.0.0:50001
       - --electrum-txs-limit=30000
       - --cors=*
   
@@ -285,10 +283,10 @@ services:
     environment:
       BITCOIN_RPC_USER: user
       BITCOIN_RPC_PASS: password
-      BITCOIN_RPC_URL: http://mainchain:38342
-      THUNDER_RPC_URL: http://host.docker.internal:7009
-      BITNAMES_RPC_URL: http://host.docker.internal:7002
-      PORT: 3343 
+      BITCOIN_RPC_URL: http://mainchain:38332
+      THUNDER_RPC_URL: http://host.docker.internal:6009
+      BITNAMES_RPC_URL: http://host.docker.internal:6002
+      PORT: 3333
       HOST: 0.0.0.0
 
     ports:
@@ -302,26 +300,26 @@ services:
     image: ghcr.io/layertwo-labs/faucet-backend:sha-d947517
     pull_policy: always
     healthcheck: 
-      test: ["CMD", "curl", "--fail", "-H", "Content-Type: application/json", "-X", "POST", "localhost:8092/faucet.v1.FaucetService/ListClaims"]
+      test: ["CMD", "curl", "--fail", "-H", "Content-Type: application/json", "-X", "POST", "localhost:8082/faucet.v1.FaucetService/ListClaims"]
     ports: 
-      - 8092:8092
+      - 8082:8082
     extra_hosts:
       - "host.docker.internal:host-gateway"
     command: 
       - faucetd
-      - --bitcoincore.address=mainchain:38342
+      - --bitcoincore.address=mainchain:38332
       - --bitcoincore.rpcuser=user
       - --bitcoincore.rpcpassword=password
-      - --enforcer.url=http://enforcer:50061
-      - --bitnames.url=http://host.docker.internal:7002
-      - --bitassets.url=http://host.docker.internal:7004
-      - --thunder.url=http://host.docker.internal:7009
-      - --zside.url=http://host.docker.internal:7098
-      - --listen=0.0.0.0:8092
+      - --enforcer.url=http://enforcer:50051
+      - --bitnames.url=http://host.docker.internal:6002
+      - --bitassets.url=http://host.docker.internal:6004
+      - --thunder.url=http://host.docker.internal:6009
+      - --zside.url=http://host.docker.internal:6098
+      - --listen=0.0.0.0:8082
 
   faucet-frontend:
     ports:
-      - 3013:3013
+      - 3003:3003
     environment: 
       API_BASE_URL: https://node.drivechain.info/api
       METADATA_BASE_URL: https://node.drivechain.info
@@ -334,7 +332,7 @@ services:
     # Find image-tags here: 
     #   Signet: https://github.com/LayerTwo-Labs/faucet-frontend-signet-server/pkgs/container/faucet-frontend
     #   Forknet: https://github.com/LayerTwo-Labs/faucet-frontend-forknet-server/pkgs/container/faucet-frontend
-    image: ghcr.io/layertwo-labs/faucet-frontend-${COMPOSE_PROJECT_NAME}:sha-d947517
+    image: ghcr.io/layertwo-labs/faucet-frontend-signet-server:sha-d947517
 
   # Can be used to run a container with the same volumes as the other services. 
   # $ docker compose run --rm busybox sh
