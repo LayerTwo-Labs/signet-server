@@ -1,0 +1,81 @@
+name: signet-server-20260205
+
+services:
+  mainchain:
+    profiles:
+      - signet
+
+    # map the named volume to the data directory
+    volumes: [mainchain-data:/home/drivechain/.drivechain-20260205]
+
+  enforcer:
+    profiles:
+      - signet
+
+    secrets:
+      - source: bitcoind-signet-cookie
+        target: /daemon-dir/.cookie
+
+  # TODO: must make the seed work... Either:
+  # --mnemonic-seed-phrase-path and a file path
+  # or a RPC
+  thunder:
+    profiles:
+      - signet
+
+  electrs:
+    profiles:
+      - signet
+
+    secrets:
+      - source: bitcoind-signet-cookie
+        target: /daemon-dir/signet/.cookie
+
+  mempool-db:
+    profiles:
+      - signet
+
+  mempool-web:
+    profiles:
+      - signet
+
+  mempool-api:
+    secrets:
+      - source: bitcoind-signet-cookie
+        target: /daemon-dir/.cookie
+
+    # conf: https://github.com/mempool/mempool/blob/e3c3f31ddbf9543db12ef4f7e5032566757d31f9/backend/mempool-config.sample.json#
+    environment:
+      MEMPOOL_NETWORK: signet
+
+  fast-withdraw-server:
+    profiles:
+      - signet
+
+  faucet-backend:
+    profiles:
+      - signet
+
+  faucet-frontend:
+    profiles:
+      - signet
+
+# Paths to secrets refer to the (remote) host machine.
+secrets:
+  # IMPORTANT: this needs to be a file WITHOUT a trailing newline
+  bitcoind-signet-cookie:
+    file: /data/secrets/bitcoind-signet-cookie.txt
+
+  bitcoind-signet-rpcauth.conf:
+    file: /data/secrets/bitcoind-signet-rpcauth.conf
+
+volumes:
+  # Paths in volume mounts work poorly with remote Docker contexts.
+  # We therefore specify external volumes. These can be created with
+  # the following command on the machine hosting the Docker context:
+  # $ docker volume create \
+  #  --driver local --opt type=none \
+  #  --opt o=bind --opt device=/data/mainchain-signet \
+  #  mainchain-signet-data
+  mainchain-signet-data:
+    external: true
