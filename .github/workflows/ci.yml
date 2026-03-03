@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  prettier:
+    name: Check formatting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: extractions/setup-just@v2
+
+      - name: Check formatting
+        run: just prettier-check
+
+  docker-compose:
+    name: Validate Docker Compose
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: extractions/setup-just@v2
+
+      - name: Create dummy Docker contexts
+        run: |
+          docker context create l2l-signet
+          docker context create l2l-forknet
+
+      - name: Validate signet
+        run: just compose-signet config --quiet
+
+      - name: Validate forknet
+        run: just compose-forknet config --quiet
