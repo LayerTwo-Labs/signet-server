@@ -52,13 +52,13 @@ get-latest-image service:
         exit 1
     fi
 
-    all_services=$(uv tool run yq -r '.services | keys[]' docker-compose.yml )
+    all_services=$(uv tool run yq -r '.services | keys[]' docker-compose.base.yml)
     if ! echo "$all_services" | grep -q "{{ service }}"; then
         echo "service '{{ service }}' not found"
         exit 1
     fi
 
-    image=$(uv tool run yq -r '.services["{{ service }}"].image' docker-compose.yml)
+    image=$(uv tool run yq -r '.services["{{ service }}"].image' docker-compose.base.yml)
     
     
     # if it is not a ghcr.io image, exit
