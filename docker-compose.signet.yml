@@ -23,6 +23,12 @@ services:
     profiles:
       - signet
 
+  romanzelectrs:
+    profiles:
+      - signet
+    ports:
+      - 50061:50001 # Electrum port
+
   electrs:
     profiles:
       - signet
