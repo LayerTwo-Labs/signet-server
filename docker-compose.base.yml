@@ -111,7 +111,7 @@ services:
       - --zmq-addr=0.0.0.0:28004
 
   bitnames:
-    image: ghcr.io/layertwo-labs/bitnames:sha-3108710
+    image: ghcr.io/layertwo-labs/bitnames:sha-2a9fd14
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "plain_bitnames_app_cli", "balance"]
@@ -145,7 +145,7 @@ services:
     healthcheck:
       test:
         ["CMD", "thunder_app_cli", "--rpc-url=http://127.0.0.0:6009", "balance"]
-    image: ghcr.io/layertwo-labs/thunder:sha-fd42347
+    image: ghcr.io/layertwo-labs/thunder:sha-61cbd03
     restart: unless-stopped
     volumes:
       - thunder-data:/root/.local/share/thunder
@@ -195,7 +195,7 @@ services:
       - --network=${NETWORK}
 
   zside:
-    image: ghcr.io/iwakura-rein/thunder-orchard:sha-a8776cd
+    image: ghcr.io/iwakura-rein/thunder-orchard:sha-7e34625
     restart: unless-stopped
     # Cannot get UDP to play well with Docker. Unable to connect external
     # nodes to this one through the open internet. Works when running with
