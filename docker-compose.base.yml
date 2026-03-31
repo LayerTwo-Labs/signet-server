@@ -3,7 +3,14 @@
 services:
   mainchain:
     healthcheck:
-      test: ["CMD", "drivechain-cli", "-chain=${NETWORK}", "getblockchaininfo"]
+      test:
+        [
+          "CMD",
+          "drivechain-cli",
+          "-rpccookiefile=/cookie",
+          "-chain=${NETWORK}",
+          "getblockchaininfo",
+        ]
 
     secrets:
       # Create a file with one or more `rpcauth` lines. Allows for specifying
@@ -11,6 +18,9 @@ services:
       # credentials.
       - source: bitcoind-${NETWORK}-rpcauth.conf
         target: /rpcauth.conf
+
+      - source: bitcoind-${NETWORK}-cookie
+        target: /cookie
 
     image: ghcr.io/layertwo-labs/bitcoin-patched:sha-32e384a
     restart: unless-stopped
@@ -256,6 +266,32 @@ services:
       "./wait-for-it.sh mempool-db:3306 --timeout=720 --strict -- ./start.sh"
     volumes: [mempool-api-data:/backend/cache]
 
+  # The other electrs instance we have running is mempool/electrs, not romanz/electrs.
+  # The first is a fork of a fork of the original romanz/electrs implementation. It
+  # turns out that BlueWallet doesn't work with mempool/electrs. We therefore run two
+  # instances! mempool/electrs is used for the block explorer, and romanz/electrs is
+  # used for BlueWallet. The resource requirements for romanz/electrs are much lower,
+  # only a few dozen gigs of storage.
+  romanzelectrs:
+    build: https://github.com/romanz/electrs.git#66b1de65c0afffff19ea97be9b872e488e4d6778
+    secrets:
+      - source: bitcoind-${NETWORK}-cookie
+        target: /daemon-dir/.cookie
+    volumes:
+      - romanz-electrs-data:/app
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    restart: unless-stopped
+    command:
+      - electrs
+      - --db-dir=/app/db
+      - --cookie-file=/daemon-dir/.cookie
+      - --daemon-rpc-addr=${CORE_RPC_ADDR}
+      - --daemon-p2p-addr=${CORE_P2P_ADDR}
+      - --electrum-rpc-addr=0.0.0.0:50001
+      - --log-filters=debug
+      - --network=${NETWORK}
+      - --magic=${NETWORK_MAGIC}
+
   # TODO: how do we enable SSL here?
   electrs:
     image: mempool/electrs
@@ -271,7 +307,6 @@ services:
     # The Electrum port is left out here because we instead want to expose the
     # 50001 port from the romanzelectrs service.
     ports:
-      - 50001:50001 # Electrum port!
       - 3000:3000 # Esplora REST API
 
     volumes: [electrs-data:/app/db]
@@ -397,6 +432,7 @@ volumes:
   bitassets-data:
   bitnames-data:
   electrs-data:
+  romanz-electrs-data:
   logs-data:
   mysql-data:
   mempool-api-data:
