@@ -168,6 +168,32 @@ services:
       - --log-level-file=trace
       - --log-dir=/logs/thunder
 
+  coinshift:
+    image: ghcr.io/layertwo-labs/coinshift:sha-9eeb5b2
+    # See network comment on the thunder service
+    network_mode: host
+    restart: unless-stopped
+    volumes:
+      - coinshift-data:/root/.local/share/coinshift
+      - logs-data:/logs
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "coinshift_app_cli",
+          "--rpc-url=http://localhost:6255",
+          "get-blockcount",
+        ]
+    command:
+      - --headless
+      - --net-addr=0.0.0.0:4255
+      - --rpc-addr=0.0.0.0:6255
+      - --mainchain-grpc-url=http://localhost:50051
+      - --log-dir=/logs/thunder
+      - --log-level=trace
+      - --log-level-file=trace
+      - --network=${NETWORK}
+
   zside:
     image: ghcr.io/iwakura-rein/thunder-orchard:sha-a8776cd
     restart: unless-stopped
@@ -436,3 +462,4 @@ volumes:
   logs-data:
   mysql-data:
   mempool-api-data:
+  coinshift-data:

@@ -16,10 +16,11 @@ services:
       - source: bitcoind-signet-cookie
         target: /daemon-dir/.cookie
 
-  # TODO: must make the seed work... Either:
-  # --mnemonic-seed-phrase-path and a file path
-  # or a RPC
   thunder:
+    profiles:
+      - signet
+
+  coinshift:
     profiles:
       - signet
 
