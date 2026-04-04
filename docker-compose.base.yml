@@ -44,7 +44,7 @@ services:
       - -rest
 
   enforcer:
-    image: ghcr.io/layertwo-labs/bip300301_enforcer:sha-8111aae
+    image: ghcr.io/layertwo-labs/bip300301_enforcer:pr-289
     pull_policy: always
     restart: unless-stopped
     environment:
@@ -425,7 +425,7 @@ services:
     # Find image-tags here:
     #   Signet: https://github.com/LayerTwo-Labs/faucet-frontend-signet-server/pkgs/container/faucet-frontend
     #   Forknet: https://github.com/LayerTwo-Labs/faucet-frontend-forknet-server/pkgs/container/faucet-frontend
-    image: ghcr.io/layertwo-labs/faucet-frontend-${NETWORK}-server:sha-7384320
+    image: ghcr.io/layertwo-labs/faucet-frontend-${NETWORK}-server:sha-2b65fcc
 
   # Can be used to run a container with the same volumes as the other services.
   # $ docker compose run --rm busybox sh
