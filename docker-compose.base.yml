@@ -44,7 +44,7 @@ services:
       - -rest
 
   enforcer:
-    image: ghcr.io/layertwo-labs/bip300301_enforcer:pr-289
+    image: ghcr.io/layertwo-labs/bip300301_enforcer:pr-290
     pull_policy: always
     restart: unless-stopped
     environment:
@@ -133,6 +133,25 @@ services:
       - --net-addr=0.0.0.0:4002
       - --rpc-addr=0.0.0.0:6002
       - --zmq-addr=0.0.0.0:28002
+
+  photon:
+    image: ghcr.io/layertwo-labs/photon:sha-13ba3e4
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "photon_app_cli", "balance"]
+    network_mode: host
+    volumes:
+      - photon-data:/data
+      - logs-data:/logs
+    command:
+      - --datadir=/data
+      - --log-dir=/logs/photon
+      - --log-level=trace
+      - --headless
+      - --mainchain-grpc-url=http://localhost:50051
+      - --net-addr=0.0.0.0:4099
+      - --rpc-addr=0.0.0.0:6099
+      - --network=${NETWORK}
 
   # TODO: must make the seed work... Either:
   # --mnemonic-seed-phrase-path and a file path
@@ -377,7 +396,7 @@ services:
   faucet-backend:
     restart: unless-stopped
     # Find image-tags here: https://github.com/LayerTwo-Labs/faucet-backend/pkgs/container/faucet-backend
-    image: ghcr.io/layertwo-labs/faucet-backend:sha-7384320
+    image: ghcr.io/layertwo-labs/faucet-backend:sha-daba7d4
     pull_policy: always
     healthcheck:
       test:
@@ -408,6 +427,7 @@ services:
       - --thunder.url=http://host.docker.internal:6009
       - --zside.url=http://host.docker.internal:6098
       - --coinshift.url=http://host.docker.internal:6255
+      - --photon.url=http://host.docker.internal:6099
       - --listen=0.0.0.0:8082
 
   faucet-frontend:
@@ -425,7 +445,7 @@ services:
     # Find image-tags here:
     #   Signet: https://github.com/LayerTwo-Labs/faucet-frontend-signet-server/pkgs/container/faucet-frontend
     #   Forknet: https://github.com/LayerTwo-Labs/faucet-frontend-forknet-server/pkgs/container/faucet-frontend
-    image: ghcr.io/layertwo-labs/faucet-frontend-${NETWORK}-server:sha-21e5935
+    image: ghcr.io/layertwo-labs/faucet-frontend-${NETWORK}-server:sha-daba7d4
 
   # Can be used to run a container with the same volumes as the other services.
   # $ docker compose run --rm busybox sh
@@ -464,3 +484,4 @@ volumes:
   mysql-data:
   mempool-api-data:
   coinshift-data:
+  photon-data:
