@@ -44,7 +44,7 @@ services:
       - -rest
 
   enforcer:
-    image: ghcr.io/layertwo-labs/bip300301_enforcer:pr-290
+    image: ghcr.io/layertwo-labs/bip300301_enforcer:sha-e2100cf
     pull_policy: always
     restart: unless-stopped
     environment:
