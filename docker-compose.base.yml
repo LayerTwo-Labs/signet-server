@@ -213,6 +213,25 @@ services:
       - --log-level-file=trace
       - --network=${NETWORK}
 
+  truthcoin:
+    image: ghcr.io/layertwo-labs/truthcoin:sha-0cc1620
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "truthcoin_dc_app_cli", "--rpc-port=6013", "balance"]
+    network_mode: host
+    volumes:
+      - truthcoin-data:/root/.local/share/truthcoin_dc
+      - logs-data:/logs
+    command:
+      - --headless
+      - --log-level=trace
+      - --mainchain-grpc-host=0.0.0.0
+      - --mainchain-grpc-port=50051
+      - --net-addr=0.0.0.0:4013
+      - --rpc-host=0.0.0.0
+      - --rpc-port=6013
+      - --zmq-addr=0.0.0.0:28013
+
   zside:
     image: ghcr.io/iwakura-rein/thunder-orchard:sha-7e34625
     restart: unless-stopped
@@ -485,3 +504,4 @@ volumes:
   mempool-api-data:
   coinshift-data:
   photon-data:
+  truthcoin-data:
