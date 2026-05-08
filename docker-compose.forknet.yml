@@ -1,4 +1,4 @@
-name: forknet-server
+name: forknet-server-20260508
 
 services:
   enforcer:
