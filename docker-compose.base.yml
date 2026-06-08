@@ -22,7 +22,7 @@ services:
       - source: bitcoind-${NETWORK}-cookie
         target: /cookie
 
-    image: ghcr.io/layertwo-labs/bitcoin-patched:sha-32e384a
+    image: ghcr.io/layertwo-labs/bitcoin-patched:v30.2
     restart: unless-stopped
     ports:
       - "38333:38333" # P2P, exposed to the internet
@@ -34,6 +34,11 @@ services:
       - -server
       - -chain=${NETWORK}
       - -signetchallenge=${SIGNET_CHALLENGE:-""}
+      # This `mainchain` service only runs under the signet profile (forknet uses
+      # an external node). A self-mined signet has backdated/sparse blocks, so
+      # without a large maxtipage the node sits in initial-block-download forever
+      # and electrs never goes healthy. Leave IBD decided on chainwork alone.
+      - -maxtipage=2147483647
       - -acceptnonstdtxn
       - -listen
       - -rpcbind=0.0.0.0
@@ -44,7 +49,7 @@ services:
       - -rest
 
   enforcer:
-    image: ghcr.io/layertwo-labs/bip300301_enforcer:sha-a57e6f1
+    image: ghcr.io/layertwo-labs/bip300301_enforcer:sha-a5bdc84
     pull_policy: always
     restart: unless-stopped
     environment:
@@ -415,7 +420,7 @@ services:
   faucet-backend:
     restart: unless-stopped
     # Find image-tags here: https://github.com/LayerTwo-Labs/faucet-backend/pkgs/container/faucet-backend
-    image: ghcr.io/layertwo-labs/faucet-backend:pr-1682
+    image: ghcr.io/layertwo-labs/faucet-backend:sha-75219b6
     pull_policy: always
     healthcheck:
       test:
@@ -465,7 +470,7 @@ services:
     # Find image-tags here:
     #   Signet: https://github.com/LayerTwo-Labs/faucet-frontend-signet-server/pkgs/container/faucet-frontend
     #   Forknet: https://github.com/LayerTwo-Labs/faucet-frontend-forknet-server/pkgs/container/faucet-frontend
-    image: ghcr.io/layertwo-labs/faucet-frontend-${NETWORK}-server:pr-1682
+    image: ghcr.io/layertwo-labs/faucet-frontend-${NETWORK}-server:sha-75219b6
 
   # Can be used to run a container with the same volumes as the other services.
   # $ docker compose run --rm busybox sh

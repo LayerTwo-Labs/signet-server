@@ -1,12 +1,13 @@
-name: signet-server-20260205
+# Project name carries the signet version, so each version gets its own
+# (project-scoped) data volume -- a new version is a clean slate, no wipe needed.
+name: signet-server-${SIGNET_VERSION}
 
 services:
   mainchain:
     profiles:
       - signet
 
-    # map the named volume to the data directory
-    volumes: [mainchain-data:/home/drivechain/.drivechain-20260205]
+    volumes: [mainchain-data:/home/drivechain/.drivechain]
 
   enforcer:
     profiles:
@@ -79,14 +80,3 @@ secrets:
 
   bitcoind-signet-rpcauth.conf:
     file: /data/secrets/bitcoind-signet-rpcauth.conf
-
-volumes:
-  # Paths in volume mounts work poorly with remote Docker contexts.
-  # We therefore specify external volumes. These can be created with
-  # the following command on the machine hosting the Docker context:
-  # $ docker volume create \
-  #  --driver local --opt type=none \
-  #  --opt o=bind --opt device=/data/mainchain-signet \
-  #  mainchain-signet-data
-  mainchain-signet-data:
-    external: true

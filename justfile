@@ -11,6 +11,64 @@ compose-signet *args="":
         -f docker-compose.base.yml \
         -f docker-compose.signet.yml {{ args }}
 
+# Bootstrap a freshly generated signet onto the remote node, end to end
+bootstrap-signet gen_dir:
+    #! /usr/bin/env bash
+    set -euo pipefail
+    gen_dir="{{ gen_dir }}"; gen_dir="${gen_dir%/}"
+    gen_env="$gen_dir/env.signet"
+    wallet="$gen_dir/signet-miner.dat"
+    [ -f "$gen_env" ] || { echo "❌ no env.signet in $gen_dir"; exit 1; }
+    [ -f "$wallet" ] || { echo "❌ no signet-miner.dat in $gen_dir"; exit 1; }
+
+    for key in SIGNET_VERSION SIGNET_CHALLENGE NETWORK_MAGIC SIGNET_MINER_COINBASE_RECIPIENT; do
+        if [ "$(grep "^$key=" "$gen_env")" != "$(grep "^$key=" .env.signet)" ]; then
+            echo "❌ $key in .env.signet does not match $gen_env"
+            echo "   copy all four values from $gen_env into .env.signet, then retry"
+            exit 1
+        fi
+    done
+
+    compose=(docker --context l2l-signet compose --env-file .env.signet --profile signet
+        -f docker-compose.base.yml -f docker-compose.signet.yml)
+    current="signet-server-$(grep '^SIGNET_VERSION=' .env.signet | cut -d= -f2)"
+
+    # Remove containers from any older signet-server-* projects (their data volumes are left intact).
+    for proj in $(docker --context l2l-signet compose ls --all --format json 2>/dev/null \
+        | jq -r '.[].Name' | grep '^signet-server-' | grep -vx "$current" || true); do
+        echo ">> removing containers from older version $proj"
+        ids="$(docker --context l2l-signet ps -aq --filter "label=com.docker.compose.project=$proj")"
+        [ -z "$ids" ] || docker --context l2l-signet rm -f $ids >/dev/null
+    done
+
+    echo ">> starting mainchain (project $current)"
+    "${compose[@]}" up -d mainchain
+    for i in $(seq 1 60); do
+        "${compose[@]}" exec -T mainchain drivechain-cli -rpccookiefile=/cookie -chain=signet getblockchaininfo >/dev/null 2>&1 && break
+        [ "$i" = 60 ] && { echo "❌ mainchain RPC never came up"; "${compose[@]}" logs --tail 20 mainchain; exit 1; }
+        sleep 1
+    done
+
+    echo ">> loading wallet"
+    "${compose[@]}" cp "$wallet" mainchain:/tmp/wallet.dat
+    "${compose[@]}" exec -u root -T mainchain chmod a+r /tmp/wallet.dat
+    "${compose[@]}" exec -T mainchain drivechain-cli -rpccookiefile=/cookie -chain=signet restorewallet signet-miner /tmp/wallet.dat true
+    "${compose[@]}" exec -T mainchain rm -f /tmp/wallet.dat
+
+    echo ">> bringing up the rest of the stack"
+    "${compose[@]}" up -d
+
+    echo ">> waiting for enforcer, then mining the first block"
+    for i in $(seq 1 90); do
+        [ -n "$(docker --context l2l-signet ps -q --filter "name=$current-enforcer-1" --filter health=healthy)" ] && break
+        [ "$i" = 90 ] && { echo "❌ enforcer never became healthy"; exit 1; }
+        sleep 2
+    done
+    "${compose[@]}" run --rm buf curl --protocol grpc --http2-prior-knowledge \
+        --data '{"blocks":1,"ackAllProposals":true}' \
+        http://enforcer:50051/cusf.mainchain.v1.WalletService/GenerateBlocks
+    echo "✅ signet bootstrapped and mining"
+
 compose-forknet *args="":
     #! /usr/bin/env bash
     if [ docker context inspect l2l-forknet > /dev/null 2>&1 ]; then
