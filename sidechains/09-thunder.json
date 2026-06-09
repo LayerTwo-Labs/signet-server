@@ -1,0 +1,15 @@
+{
+  "sidechain_id": 9,
+  "declaration": {
+    "v0": {
+      "title": "Thunder",
+      "description": "A sidechain with a large & growing blocksize, plus fraud proofs",
+      "hash_id_1": {
+        "hex": "c46e3297057b396024798ccfe05c4d1488dbc9f14f47af5858f1a81479e3d742"
+      },
+      "hash_id_2": {
+        "hex": "2559908bfe6e0542edb80078e9c2316c59a0ba30"
+      }
+    }
+  }
+}
