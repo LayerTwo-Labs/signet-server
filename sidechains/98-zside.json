@@ -1,0 +1,15 @@
+{
+  "sidechain_id": 98,
+  "declaration": {
+    "v0": {
+      "title": "zSide",
+      "description": "Sidechain with private transactions",
+      "hash_id_1": {
+        "hex": "ca96e7f0b9d29bae32cce839a7f4792319f98a6dafabd866da786247ad9d14d4"
+      },
+      "hash_id_2": {
+        "hex": "7be59b90c7c099dc732e3ad82cd77b2abee3c6de"
+      }
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "sidechain_id": 13,
+  "declaration": {
+    "v0": {
+      "title": "Truthcoin",
+      "description": "A sidechain for decentralized prediction markets and oracle data",
+      "hash_id_1": {
+        "hex": "3e9f805a57ada7ad062b413c532e268343ee0514fdb65762dcea549de38078ce"
+      },
+      "hash_id_2": {
+        "hex": "435ce0d2e24196de240db92c27ffd0753bd14b80"
+      }
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "sidechain_id": 4,
+  "declaration": {
+    "v0": {
+      "title": "BitAssets",
+      "description": "A sidechain for digital assets",
+      "hash_id_1": {
+        "hex": "45ae898ac83b47bb4d62b3ea509d2fd0275ebe31ef93da6e32dacd72f8a0912a"
+      },
+      "hash_id_2": {
+        "hex": "664d418f3523f96e8222999f9fec6686b7a0642d"
+      }
+    }
+  }
+}

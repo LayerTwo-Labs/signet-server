@@ -1,0 +1,15 @@
+{
+  "sidechain_id": 255,
+  "declaration": {
+    "v0": {
+      "title": "Coinshift",
+      "description": "Sidechain with a P2P, trustless L2-L1 swap system",
+      "hash_id_1": {
+        "hex": "eaef35566f8849b13bd1efeb33f94b00118a549bf3decafcf3e3a64f3a78db5a"
+      },
+      "hash_id_2": {
+        "hex": "74f7ea60255aeb974c71eb18b2072ddb0215350f"
+      }
+    }
+  }
+}

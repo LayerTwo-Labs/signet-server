@@ -1,0 +1,15 @@
+{
+  "sidechain_id": 2,
+  "declaration": {
+    "v0": {
+      "title": "BitNames",
+      "description": "A variant of Namecoin/BitDNS that aims to replace ICANN",
+      "hash_id_1": {
+        "hex": "2b4dfd7a97c94502ed88441e917b13533a30929a028568231eacccc6c25daf23"
+      },
+      "hash_id_2": {
+        "hex": "67a981fe0f2ea78126e7ad94d4f233c5bfdc1575"
+      }
+    }
+  }
+}

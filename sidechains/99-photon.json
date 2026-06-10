@@ -1,0 +1,15 @@
+{
+  "sidechain_id": 99,
+  "declaration": {
+    "v0": {
+      "title": "Photon",
+      "description": "Sidechain using post-quantum cryptography",
+      "hash_id_1": {
+        "hex": "e924266aeaee69e861f0f40ae4108790c32102fdc9005c3a642e0b418c768569"
+      },
+      "hash_id_2": {
+        "hex": "470285933cd504336a1be30ff929d5dc48296e32"
+      }
+    }
+  }
+}
