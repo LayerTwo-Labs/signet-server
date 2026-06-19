@@ -72,6 +72,10 @@ services:
     profiles:
       - signet
 
+  coinnews:
+    profiles:
+      - signet
+
 # Paths to secrets refer to the (remote) host machine.
 secrets:
   # IMPORTANT: this needs to be a file WITHOUT a trailing newline
