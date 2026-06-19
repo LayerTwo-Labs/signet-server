@@ -472,6 +472,25 @@ services:
     #   Forknet: https://github.com/LayerTwo-Labs/faucet-frontend-forknet-server/pkgs/container/faucet-frontend
     image: ghcr.io/layertwo-labs/faucet-frontend-${NETWORK}-server:sha-75219b6
 
+  coinnews:
+    restart: unless-stopped
+    image: ghcr.io/layertwo-labs/coinnews-server:sha-9593680
+    pull_policy: always
+    secrets:
+      - source: bitcoind-${NETWORK}-cookie
+        target: /cookie
+    environment:
+      COINNEWS_BITCOIND_URL: http://${CORE_RPC_ADDR}
+      COINNEWS_BITCOIND_COOKIE: /cookie
+      COINNEWS_NETWORK: ${NETWORK}
+      COINNEWS_DB: /data/coinnews.db
+    volumes:
+      - coinnews-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/healthz"]
+    ports:
+      - "8989:8080" # ConnectRPC API + /healthz, exposed to the internet
+
   # Can be used to run a container with the same volumes as the other services.
   # $ docker compose run --rm busybox sh
 
@@ -485,6 +504,7 @@ services:
       - enforcer-data:/enforcer-data
       - thunder-data:/thunder-data
       - zside-data:/zside-data
+      - coinnews-data:/coinnews-data
       - logs-data:/logs
 
   buf:
@@ -511,3 +531,4 @@ volumes:
   coinshift-data:
   photon-data:
   truthcoin-data:
+  coinnews-data:
