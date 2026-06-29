@@ -1,0 +1,218 @@
+name: mainnet-server
+
+services:
+  mainchain:
+    image: bitcoin/bitcoin:31.0
+    restart: unless-stopped
+    # bitcoind flushes chainstate on shutdown. Give it room so it isn't SIGKILLed.
+    stop_grace_period: 5m
+
+    # Optional: remap the image's `bitcoin` user (default uid:gid 101:101) to a
+    # host uid/gid. The default /entrypoint.sh honours these and chown's the
+    # datadir to match, so the host bind dir can be owned by any user you like.
+    # environment:
+    #   UID: 1000
+    #   GID: 1000
+
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "bitcoin-cli",
+          "-rpccookiefile=/cookie",
+          "-chain=main",
+          "getblockchaininfo",
+        ]
+
+    secrets:
+      # rpcauth line(s), bitcoind reads them via -conf below.
+      - source: bitcoind-mainnet-rpcauth.conf
+        target: /rpcauth.conf
+      # Bitcoin Core-style cookie ("<user>:<password>"), used by the healthcheck.
+      - source: bitcoind-mainnet-cookie
+        target: /cookie
+
+    ports:
+      - "8333:8333" # P2P, exposed to the internet
+      - "127.0.0.1:8332:8332" # RPC, only available from host machine
+
+    # BITCOIN_DATA defaults to /home/bitcoin/.bitcoin; the entrypoint creates
+    # and chown's it, then appends -datadir, so no -datadir flag is needed here.
+    volumes: [mainchain-data:/home/bitcoin/.bitcoin]
+
+    # The default entrypoint prepends `bitcoind` (the leading "-" arg triggers
+    # it) and runs it as the `bitcoin` user via gosu, so list flags only.
+    command:
+      - -chain=main
+      - -server
+      - -conf=/rpcauth.conf
+      # This node only backs the block explorer; it never holds funds.
+      - -disablewallet
+      - -listen
+      - -rpcbind=0.0.0.0
+      - -rpcallowip=0.0.0.0/0
+      - -txindex
+      - -zmqpubsequence=tcp://0.0.0.0:29000
+      - -rest
+
+  # mempool/electrs: Esplora REST API + Electrum, backs the explorer frontend.
+  # Pinned to the v3.2 line to match mempool/backend|frontend:v3.2.1 below.
+  electrs:
+    image: mempool/electrs:v3.2.0
+    restart: unless-stopped
+    depends_on:
+      mainchain:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:3000/blocks/tip/height"]
+    environment:
+      RUST_BACKTRACE: 1
+    secrets:
+      # for mainnet, electrs reads the cookie from <daemon-dir>/.cookie.
+      - source: bitcoind-mainnet-cookie
+        target: /daemon-dir/.cookie
+    ports:
+      - 3000:3000 # Esplora REST API
+      # Electrum RPC, bound to loopback only. The host's systemd Caddy picks it
+      # up here and re-exposes it publicly: plaintext on :50001 and TLS on :50002
+      # (see caddy/Caddyfile). Not published on 0.0.0.0 — Caddy is the only
+      # intended consumer.
+      - "127.0.0.1:50061:50001"
+    volumes:
+      - electrs-data:/app/db
+      # bitcoind's datadir, read-only, so electrs can parse blk*.dat directly
+      # instead of pulling every block over JSON-RPC (see --blocks-dir below).
+      - mainchain-data:/mainchain-data:ro
+    command:
+      - -vvv
+      - --timestamp
+      - --daemon-dir=/daemon-dir
+      - --daemon-rpc-addr=mainchain:8332
+      # Read blocks straight off disk rather than over RPC. Dropping
+      # --jsonrpc-import makes the initial index dramatically faster; it only
+      # works because electrs shares bitcoind's filesystem on this host.
+      - --blocks-dir=/mainchain-data/blocks
+      - --db-dir=/app/db
+      - --network=mainnet
+      - --http-addr=0.0.0.0:3000
+      - --electrum-rpc-addr=0.0.0.0:50001
+      - --electrum-txs-limit=30000
+      - --cors=*
+
+  mempool-db:
+    image: mariadb:10.5.21
+    restart: unless-stopped
+    stop_grace_period: 1m
+    environment:
+      MYSQL_DATABASE: "mempool"
+      MYSQL_USER: "mempool"
+      MYSQL_PASSWORD: "mempool"
+      MYSQL_ROOT_PASSWORD: "admin"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "mempool",
+          "-pmempool",
+        ]
+    volumes: [mysql-data:/var/lib/mysql]
+
+  mempool-api:
+    image: mempool/backend:v3.2.1
+    restart: unless-stopped
+    stop_grace_period: 1m
+    depends_on: [mempool-db]
+    # conf: https://github.com/mempool/mempool/blob/e3c3f31ddbf9543db12ef4f7e5032566757d31f9/backend/mempool-config.sample.json#
+    environment:
+      MEMPOOL_BACKEND: "electrum"
+      MEMPOOL_NETWORK: mainnet
+      ELECTRUM_HOST: electrs
+      ELECTRUM_PORT: 50001
+      ELECTRUM_TLS_ENABLED: "false"
+      CORE_RPC_HOST: mainchain
+      CORE_RPC_PORT: 8332
+      CORE_RPC_COOKIE: true
+      CORE_RPC_COOKIE_PATH: "/daemon-dir/.cookie"
+      DATABASE_ENABLED: "true"
+      DATABASE_HOST: "mempool-db"
+      DATABASE_DATABASE: "mempool"
+      DATABASE_USERNAME: "mempool"
+      DATABASE_PASSWORD: "mempool"
+      STATISTICS_ENABLED: "true"
+      FIAT_PRICE_ENABLED: false
+    secrets:
+      - source: bitcoind-mainnet-cookie
+        target: /daemon-dir/.cookie
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "localhost:8999/api/v1/backend-info"]
+    command:
+      "./wait-for-it.sh mempool-db:3306 --timeout=720 --strict -- ./start.sh"
+    volumes: [mempool-api-data:/backend/cache]
+
+  mempool-web:
+    image: mempool/frontend:v3.2.1
+    restart: unless-stopped
+    stop_grace_period: 1m
+    environment:
+      FRONTEND_HTTP_PORT: 8080
+      BACKEND_MAINNET_HTTP_HOST: mempool-api
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080"]
+    command:
+      "./wait-for mempool-db:3306 --timeout=720 -- nginx -g 'daemon off;'"
+    ports:
+      - 8080:8080 # explorer frontend, exposed to the internet
+
+# Paths to secrets refer to the (remote) host machine.
+secrets:
+  # IMPORTANT: these must be files WITHOUT a trailing newline.
+  #
+  # bitcoind-mainnet-cookie.txt:   a single line "<user>:<password>" (a
+  #   Bitcoin Core-style cookie). electrs and mempool-api authenticate to
+  #   bitcoind with it.
+  # bitcoind-mainnet-rpcauth.conf: one "rpcauth=<user>:<salt>$<hash>" line for
+  #   the SAME user/password (generate with `just gen-bitcoin-core-pass <user>`).
+  bitcoind-mainnet-cookie:
+    file: /home/mainnet/secrets/bitcoind-mainnet-cookie.txt
+
+  bitcoind-mainnet-rpcauth.conf:
+    file: /home/mainnet/secrets/bitcoind-mainnet-rpcauth.conf
+
+# The chain (~700GB) and the electrs index (hundreds of GB) are far too large
+# for Docker-managed storage, so the heavy volumes live on the host's big disk.
+# On this host the large filesystem (/dev/md3) is mounted at /home, so the data
+# lives under /home/mainnet. These are external, bind-mounted volumes; create
+# them ON THE HOST before the first `up`, after the target dirs exist:
+#
+#   mkdir -p /home/mainnet/data/{bitcoin,electrs,mysql,mempool-cache}
+#   # The mempool/backend image runs as container-uid 1000 but ships no cache
+#   # dir, so the bind target must be writable by that user or it can't persist
+#   # its cache files. Docker here is ROOTLESS (daemon runs as `mainnet`, subuid
+#   # base 100000), so container-uid 1000 maps to host uid 100000+1000-1=100999.
+#   # Chowning needs real root (the subuid range isn't owned by `mainnet`):
+#   sudo chown 100999:100999 /home/mainnet/data/mempool-cache
+#   for v in bitcoin electrs mysql mempool-cache; do \
+#     docker volume create --driver local \
+#       --opt type=none --opt o=bind --opt device=/home/mainnet/data/$v \
+#       mainnet-$v-data; \
+#   done
+volumes:
+  mainchain-data:
+    external: true
+    name: mainnet-bitcoin-data
+  electrs-data:
+    external: true
+    name: mainnet-electrs-data
+  mysql-data:
+    external: true
+    name: mainnet-mysql-data
+  # Small backend cache. Bind-mounted like the others so the host dir's
+  # ownership (uid 100999, see above) makes it writable by the backend process.
+  mempool-api-data:
+    external: true
+    name: mainnet-mempool-cache-data

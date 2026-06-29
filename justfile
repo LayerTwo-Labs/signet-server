@@ -81,7 +81,40 @@ compose-forknet *args="":
         --profile forknet \
         -f docker-compose.base.yml \
         -f docker-compose.forknet.yml {{ args }}
-    
+
+compose-mainnet *args="":
+    #! /usr/bin/env bash
+    if [ docker context inspect l2l-mainnet > /dev/null 2>&1 ]; then
+        echo "❌ No Docker context named 'l2l-mainnet' found"
+        exit 1
+    fi
+
+    # mainnet is a standalone, self-contained stack: it does NOT extend
+    # docker-compose.base.yml, so there's no --env-file or base layering here.
+    docker --context l2l-mainnet compose \
+        -f docker-compose.mainnet.yml {{ args }}
+
+# Push caddy/Caddyfile.mainnet to the mainnet host's /etc/caddy/Caddyfile and reload Caddy.
+# Caddy runs under systemd (not in the compose stack), so this goes over SSH as
+# root rather than through the Docker context. The host's systemd unit reads
+# /etc/caddy/Caddyfile, so that's the deploy target. Validates a staged copy
+# before swapping it in, and backs up the previous config, so a bad edit can't
+# take the proxy down.
+[doc("Deploy caddy/Caddyfile.mainnet to the mainnet host and reload Caddy")]
+update-mainnet-caddy:
+    #! /usr/bin/env bash
+    set -euo pipefail
+    host="root@l2l-mainnet"
+    echo ">> staging caddy/Caddyfile.mainnet on $host"
+    ssh "$host" 'cat > /etc/caddy/Caddyfile.new' < caddy/Caddyfile.mainnet
+    echo ">> validating staged config"
+    ssh "$host" 'caddy validate --config /etc/caddy/Caddyfile.new'
+    echo ">> backing up current config and swapping in the new one"
+    ssh "$host" 'cp -a /etc/caddy/Caddyfile "/etc/caddy/Caddyfile.bak.$(date +%Y%m%d%H%M%S)" 2>/dev/null || true; mv /etc/caddy/Caddyfile.new /etc/caddy/Caddyfile'
+    echo ">> reloading caddy"
+    ssh "$host" 'systemctl reload caddy && systemctl is-active caddy'
+    echo "✅ caddy config updated on mainnet host"
+
 rpcauth-commit := "fa5f29774872d18febc0df38831a6e45f3de69cc"
 # https://github.com/bitcoin/bitcoin/blob/master/share/rpcauth/rpcauth.py
 [doc("Generate RPC credentials for bitcoin.conf using Bitcoin Core's rpcauth.py. Empty password argument will generate a random password.")]

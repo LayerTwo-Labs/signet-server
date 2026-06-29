@@ -1,0 +1,31 @@
+# Caddy config for the MAINNET stack (docker-compose.mainnet.yml), serving
+# https://explorer.mainnet.drivechain.info. Caddy runs under systemd on the
+# mainnet host, NOT in the compose stack. Deploy this file with:
+#   just update-mainnet-caddy
+{
+	debug
+
+	# Electrum over TLS: terminate on :50001/:50002 (SNI-matched) and forward to
+	# the local Electrum endpoint. Uses the layer4 app (caddy-l4 plugin).
+	layer4 {
+		explorer.mainnet.drivechain.info:50001 {
+			route {
+				proxy 127.0.0.1:50061
+			}
+		}
+		explorer.mainnet.drivechain.info:50002 {
+			route {
+				tls
+				proxy 127.0.0.1:50061
+			}
+		}
+	}
+}
+
+# mempool-web (nginx, :8080) serves the frontend AND internally splits the API:
+# /api/v1/* -> mempool backend (incl. the /api/v1/ws websocket), /api/* -> Esplora.
+# So proxy everything here; do NOT route /api/* straight to electrs:3000 — that
+# bypasses the backend and 502s the websocket / 404s every /api/v1 call.
+explorer.mainnet.drivechain.info {
+	reverse_proxy localhost:8080
+}
