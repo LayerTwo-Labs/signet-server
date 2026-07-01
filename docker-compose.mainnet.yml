@@ -72,7 +72,11 @@ services:
       - source: bitcoind-mainnet-cookie
         target: /daemon-dir/.cookie
     ports:
-      - 3000:3000 # Esplora REST API
+      # Esplora REST API, bound to loopback only. The host's systemd Caddy
+      # picks it up here and re-exposes it publicly over HTTPS at
+      # esplora.mainnet.drivechain.info (see caddy/Caddyfile.mainnet). Not
+      # published on 0.0.0.0 — Caddy is the only intended consumer.
+      - "127.0.0.1:3000:3000"
       # Electrum RPC, bound to loopback only. The host's systemd Caddy picks it
       # up here and re-exposes it publicly: plaintext on :50001 and TLS on :50002
       # (see caddy/Caddyfile). Not published on 0.0.0.0 — Caddy is the only
