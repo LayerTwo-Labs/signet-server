@@ -29,3 +29,10 @@
 explorer.mainnet.drivechain.info {
 	reverse_proxy localhost:8080
 }
+
+# The real Esplora REST API, straight from electrs (not mempool-web's partial
+# shim at explorer.mainnet.drivechain.info/api). electrs already sets
+# --cors=*, so this is safe to hit directly from browser JS. 
+esplora.mainnet.drivechain.info {
+	reverse_proxy 127.0.0.1:3000
+}
